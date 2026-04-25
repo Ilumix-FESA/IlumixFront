@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0D0C07">
+  <title>Criar Conta — ilumix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --amber:      #E2B84A;
+      --amber-warm: #D4A832;
+      --amber-deep: #C49020;
+      --amber-soft: #EDD070;
+      --amber-dim:  rgba(226,184,74,0.10);
+      --amber-glow: rgba(226,184,74,0.30);
+      --linen:      #F0E8D0;
+      --dark-0:     #0D0C07;
+      --dark-1:     #141209;
+      --dark-2:     #1C1A10;
+      --dark-3:     #232115;
+      --dark-4:     #2E2C1C;
+      --dark-5:     #3A3822;
+      --text-hi:    #F0E8D0;
+      --text-mid:   #948E76;
+      --text-lo:    #524E38;
+      --border:     rgba(226,184,74,0.08);
+      --border-h:   rgba(226,184,74,0.22);
+      --border-act: rgba(226,184,74,0.40);
+      --red:        #B56060;
+      --green:      #5BAD6A;
+      --font: 'Sora', system-ui, sans-serif;
+      --ease: 0.18s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    html, body { min-height:100%; }
+    body { font-family:var(--font); background:var(--dark-0); color:var(--text-hi); display:flex; -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+    a { text-decoration:none; color:inherit; }
+    ::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-thumb { background:rgba(226,184,74,0.18); border-radius:2px; }
+
+    /* ── LEFT PANEL ── */
+    .panel-left {
+      width: 46%;
+      background: var(--dark-1);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 40px 48px;
+      position: sticky; top: 0; height: 100vh;
+      overflow: hidden;
+    }
+    .panel-bg { position:absolute; inset:0; pointer-events:none; background: radial-gradient(ellipse 70% 60% at 30% 60%, rgba(226,184,74,0.06), transparent 70%), radial-gradient(ellipse 40% 40% at 80% 20%, rgba(226,184,74,0.03), transparent 60%); }
+    .panel-grid { position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(226,184,74,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(226,184,74,0.025) 1px,transparent 1px);background-size:50px 50px;mask-image:radial-gradient(ellipse 80% 80% at 30% 60%,black 20%,transparent 80%); }
+
+    .panel-logo { display:flex; align-items:center; gap:12px; position:relative; z-index:1; margin-bottom:auto; }
+    .panel-logo a { display:flex; align-items:center; gap:12px; }
+    .panel-logo svg { width:30px; height:30px; }
+    .panel-logo-text { font-size:17px; font-weight:300; color:var(--text-hi); }
+    .panel-logo-text b { font-weight:600; color:var(--amber); }
+
+    .panel-content { flex:1; display:flex; flex-direction:column; justify-content:center; padding:40px 0; position:relative; z-index:1; }
+    .panel-eyebrow { font-size:10px;font-weight:500;letter-spacing:2.5px;text-transform:uppercase;color:var(--amber);margin-bottom:16px; }
+    .panel-h1 { font-size:clamp(26px,3vw,42px);font-weight:200;letter-spacing:-1px;line-height:1.1;color:var(--text-hi);margin-bottom:16px; }
+    .panel-h1 b { font-weight:600; }
+    .panel-body { font-size:14px;font-weight:300;color:var(--text-mid);line-height:1.8;margin-bottom:36px;max-width:340px; }
+
+    /* Steps indicator */
+    .steps { display:flex; gap:0; position:relative; }
+    .steps::before { content:''; position:absolute; top:16px; left:0; right:0; height:1px; background:var(--border); z-index:0; }
+    .step-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:10px; position:relative; z-index:1; }
+    .step-num { width:32px; height:32px; border-radius:50%; background:var(--dark-3); border:1px solid var(--border); display:flex; align-items:center;justify-content:center; font-size:12px; font-weight:600; color:var(--text-lo); transition:all 0.3s; }
+    .step-num.done { background:var(--amber); border-color:var(--amber); color:var(--dark-0); }
+    .step-num.active { background:var(--dark-4); border-color:var(--amber); color:var(--amber); }
+    .step-label { font-size:10px; font-weight:500; letter-spacing:1px; text-transform:uppercase; color:var(--text-lo); text-align:center; transition:color 0.3s; }
+    .step-label.active { color:var(--amber); }
+    .step-label.done  { color:var(--text-mid); }
+
+    .panel-benefits { margin-top:40px; display:flex; flex-direction:column; gap:14px; }
+    .benefit { display:flex; align-items:center; gap:12px; font-size:13px; font-weight:300; color:var(--text-mid); }
+    .benefit svg { width:14px; height:14px; color:var(--green); flex-shrink:0; }
+
+    /* ── RIGHT PANEL ── */
+    .panel-right { flex:1; display:flex; align-items:flex-start; justify-content:center; padding:40px 48px; overflow-y:auto; min-height:100vh; }
+    .form-wrap { width:100%; max-width:440px; padding:20px 0; }
+
+    .form-header { margin-bottom:28px; }
+    .form-title { font-size:22px; font-weight:300; color:var(--text-hi); letter-spacing:-0.5px; margin-bottom:6px; }
+    .form-title b { font-weight:600; }
+    .form-sub { font-size:13px; font-weight:300; color:var(--text-mid); }
+    .form-sub a { color:var(--amber); }
+
+    /* Step panels */
+    .step-panel { display:none; }
+    .step-panel.is-active { display:block; animation:fadeIn 0.3s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    /* Fields */
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:11px; font-weight:500; letter-spacing:0.8px; color:var(--text-mid); margin-bottom:7px; text-transform:uppercase; }
+    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .field-input-wrap { position:relative; }
+    .field input, .field select {
+      width:100%; background:var(--dark-2); border:1px solid var(--border);
+      border-radius:8px; padding:11px 14px;
+      color:var(--text-hi); font-size:13px; font-family:var(--font);
+      transition:border-color var(--ease), background var(--ease);
+      appearance:none;
+    }
+    .field input::placeholder, .field select::placeholder { color:var(--text-lo); }
+    .field input:focus, .field select:focus { border-color:var(--border-act); background:var(--dark-3); outline:none; }
+    .field input.is-error, .field select.is-error { border-color:var(--red); }
+    .field input.is-ok { border-color:rgba(91,173,106,0.5); }
+    .field input[disabled] { opacity:0.5; cursor:not-allowed; }
+    .field-error { font-size:11px; color:var(--red); margin-top:4px; display:none; }
+    .field-error.is-visible { display:block; }
+    .field-hint  { font-size:11px; color:var(--text-lo); margin-top:4px; }
+
+    /* CEP loading indicator */
+    .field-cep-status { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-mid); margin-top:5px; display:none; }
+    .field-cep-status.is-visible { display:flex; }
+
+    /* Address block (shown after CEP) */
+    .address-block { background:var(--dark-3); border:1px solid var(--border); border-radius:8px; padding:14px; margin-top:14px; display:none; }
+    .address-block.is-visible { display:block; animation:fadeIn 0.3s ease; }
+    .address-block-title { font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid);margin-bottom:12px;display:flex;align-items:center;gap:6px; }
+    .address-block-title svg { width:12px;height:12px;color:var(--green); }
+    .addr-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:13px; color:var(--text-mid); }
+    .addr-row:last-child { margin-bottom:0; }
+    .addr-key { min-width:70px; font-size:11px; font-weight:500; letter-spacing:0.5px; color:var(--text-lo); }
+    .addr-val { color:var(--text-hi); font-weight:400; }
+
+    /* Password strength */
+    .pw-strength { margin-top:8px; display:none; }
+    .pw-strength.is-visible { display:block; }
+    .pw-strength-bar { height:3px; background:var(--dark-4); border-radius:2px; overflow:hidden; margin-bottom:5px; }
+    .pw-strength-fill { height:100%; border-radius:2px; transition:width 0.3s, background 0.3s; }
+    .pw-strength-label { font-size:11px; }
+
+    /* Terms */
+    .terms-check { display:flex; align-items:flex-start; gap:10px; margin-bottom:18px; cursor:pointer; }
+    .terms-check input { width:16px; height:16px; accent-color:var(--amber); flex-shrink:0; margin-top:1px; cursor:pointer; }
+    .terms-check span { font-size:12px; font-weight:300; color:var(--text-mid); line-height:1.6; }
+    .terms-check a { color:var(--amber); }
+
+    /* Nav buttons */
+    .form-nav { display:flex; gap:12px; margin-top:24px; }
+    .btn-back { flex:1; padding:12px; background:var(--dark-3); border:1px solid var(--border); border-radius:8px; font-size:13px; font-weight:500; color:var(--text-mid); cursor:pointer; font-family:var(--font); transition:all var(--ease); }
+    .btn-back:hover { border-color:var(--border-h); color:var(--text-hi); }
+    .btn-next { flex:2; padding:12px; background:var(--amber); border:none; border-radius:8px; font-size:13px; font-weight:600; color:var(--dark-0); cursor:pointer; font-family:var(--font); transition:all var(--ease); display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn-next:hover { background:var(--amber-soft); }
+    .btn-next.is-loading { opacity:0.7; cursor:not-allowed; }
+
+    /* Progress bar */
+    .progress-wrap { margin-bottom:28px; }
+    .progress-bar { height:2px; background:var(--dark-4); border-radius:1px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,var(--amber-deep),var(--amber-soft)); border-radius:1px; transition:width 0.4s ease; }
+    .progress-label { font-size:11px; color:var(--text-lo); margin-top:6px; }
+
+    /* Spinner */
+    .spinner { width:15px;height:15px;border:2px solid rgba(13,12,7,0.3);border-top-color:var(--dark-0);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+
+    /* Success */
+    .success-screen { display:none; text-align:center; padding:48px 0; }
+    .success-screen.is-visible { display:block; animation:fadeIn 0.5s ease; }
+    .success-orb { width:80px;height:80px;border-radius:50%;background:radial-gradient(circle at 38% 33%,var(--amber-soft),var(--amber-deep) 65%);margin:0 auto 24px;box-shadow:0 0 32px var(--amber-glow);animation:glowPulse 3s ease-in-out infinite; }
+    @keyframes glowPulse { 0%,100%{box-shadow:0 0 16px var(--amber-glow)}50%{box-shadow:0 0 40px var(--amber-glow)} }
+
+    @media(max-width:900px) {
+      .panel-left { display:none; }
+      .panel-right { padding:28px 20px; }
+    }
+    @media(max-width:480px) {
+      .field-row { grid-template-columns:1fr; }
+      .panel-right { padding:20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="panel-left">
+  <div class="panel-bg"></div>
+  <div class="panel-grid"></div>
+
+  <div class="panel-logo">
+    <a href="landing.html">
+      <svg viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="6" fill="#E2B84A" opacity=".92"/>
+        <circle cx="16" cy="16" r="10" stroke="#E2B84A" stroke-width="1" opacity=".35"/>
+        <circle cx="16" cy="16" r="14" stroke="#E2B84A" stroke-width=".5" opacity=".12"/>
+        <line x1="16" y1="2"  x2="16" y2="6"  stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+        <line x1="16" y1="26" x2="16" y2="30" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+        <line x1="2"  y1="16" x2="6"  y2="16" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+        <line x1="26" y1="16" x2="30" y2="16" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+      </svg>
+      <div class="panel-logo-text">ilu<b>mix</b></div>
+    </a>
+  </div>
+
+  <div class="panel-content">
+    <div class="panel-eyebrow">Crie sua conta</div>
+    <h1 class="panel-h1">Comece a<br><b>iluminar</b><br>com inteligência.</h1>
+    <p class="panel-body">Configure em 2 minutos e tenha controle total de cada lâmpada da sua casa. Grátis para sempre nos primeiros 5 dispositivos.</p>
+
+    <div class="steps" id="steps-indicator">
+      <div class="step-item">
+        <div class="step-num active" id="step-num-1">1</div>
+        <div class="step-label active" id="step-lbl-1">Conta</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" id="step-num-2">2</div>
+        <div class="step-label" id="step-lbl-2">Dados</div>
+      </div>
+      <div class="step-item">
+        <div class="step-num" id="step-num-3">3</div>
+        <div class="step-label" id="step-lbl-3">Endereço</div>
+      </div>
+    </div>
+
+    <div class="panel-benefits">
+      <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Plano gratuito para sempre</div>
+      <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Sem cartão de crédito</div>
+      <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Setup em menos de 2 minutos</div>
+      <div class="benefit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Cancele quando quiser</div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel-right">
+  <div class="form-wrap">
+
+    <!-- SUCCESS SCREEN -->
+    <div class="success-screen" id="success-screen">
+      <div class="success-orb"></div>
+      <div style="font-size:24px;font-weight:300;color:var(--text-hi);margin-bottom:8px">Conta criada!</div>
+      <div style="font-size:14px;color:var(--text-mid);margin-bottom:8px">Bem-vindo à ilumix.</div>
+      <div style="font-size:13px;color:var(--text-lo);margin-bottom:36px">Preparando seu painel de controle...</div>
+      <div style="display:flex;justify-content:center"><div class="spinner" style="width:24px;height:24px;border-color:rgba(226,184,74,0.2);border-top-color:var(--amber)"></div></div>
+    </div>
+
+    <!-- FORM -->
+    <div id="form-body">
+      <div class="form-header">
+        <div class="form-title" id="form-title">Criar <b>conta gratuita</b></div>
+        <div class="form-sub" id="form-sub">Já tem conta? <a href="login.html">Entrar</a></div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:33%"></div></div>
+        <div class="progress-label" id="progress-label">Passo 1 de 3</div>
+      </div>
+
+      <!-- STEP 1: Account -->
+      <div class="step-panel is-active" id="step-1">
+        <div class="field">
+          <label>E-mail</label>
+          <div class="field-input-wrap">
+            <input type="email" id="f-email" placeholder="seu@email.com" autocomplete="email">
+          </div>
+          <div class="field-error" id="err-email">Informe um e-mail válido</div>
+        </div>
+
+        <div class="field">
+          <label>Senha</label>
+          <div class="field-input-wrap">
+            <input type="password" id="f-password" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+          </div>
+          <div class="pw-strength" id="pw-strength">
+            <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-fill"></div></div>
+            <div class="pw-strength-label" id="pw-label"></div>
+          </div>
+          <div class="field-error" id="err-pw">Senha deve ter ao menos 8 caracteres</div>
+        </div>
+
+        <div class="field">
+          <label>Confirmar Senha</label>
+          <input type="password" id="f-password2" placeholder="Repita a senha" autocomplete="new-password">
+          <div class="field-error" id="err-pw2">As senhas não coincidem</div>
+        </div>
+
+        <div class="form-nav">
+          <button class="btn-next" id="btn-step1">Próximo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Personal data -->
+      <div class="step-panel" id="step-2">
+        <div class="field-row">
+          <div class="field">
+            <label>Nome</label>
+            <input type="text" id="f-nome" placeholder="Primeiro nome" autocomplete="given-name">
+            <div class="field-error" id="err-nome">Informe seu nome</div>
+          </div>
+          <div class="field">
+            <label>Sobrenome</label>
+            <input type="text" id="f-sobrenome" placeholder="Sobrenome" autocomplete="family-name">
+            <div class="field-error" id="err-sobrenome">Informe o sobrenome</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Data de Nascimento</label>
+          <input type="date" id="f-nascimento" autocomplete="bday">
+          <div class="field-error" id="err-nasc">Informe sua data de nascimento</div>
+          <div class="field-hint">Você deve ter ao menos 18 anos</div>
+        </div>
+
+        <div class="field">
+          <label>Telefone (opcional)</label>
+          <input type="tel" id="f-telefone" placeholder="(11) 99999-9999" autocomplete="tel">
+        </div>
+
+        <div class="form-nav">
+          <button class="btn-back" onclick="goStep(1)">Voltar</button>
+          <button class="btn-next" id="btn-step2">Próximo <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Address -->
+      <div class="step-panel" id="step-3">
+        <div class="field">
+          <label>CEP</label>
+          <div class="field-input-wrap">
+            <input type="text" id="f-cep" placeholder="00000-000" maxlength="9" autocomplete="postal-code">
+          </div>
+          <div class="field-cep-status" id="cep-status">
+            <div class="spinner" style="width:12px;height:12px;border-color:rgba(226,184,74,0.2);border-top-color:var(--amber)"></div>
+            <span id="cep-status-text">Buscando endereço...</span>
+          </div>
+          <div class="field-error" id="err-cep">CEP inválido</div>
+        </div>
+
+        <!-- Address autofill block -->
+        <div class="address-block" id="address-block">
+          <div class="address-block-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Endereço encontrado
+          </div>
+          <div class="addr-row"><span class="addr-key">Logradouro</span><span class="addr-val" id="addr-logradouro">—</span></div>
+          <div class="addr-row"><span class="addr-key">Bairro</span><span class="addr-val" id="addr-bairro">—</span></div>
+          <div class="addr-row"><span class="addr-key">Cidade</span><span class="addr-val" id="addr-cidade">—</span></div>
+          <div class="addr-row"><span class="addr-key">Estado</span><span class="addr-val" id="addr-estado">—</span></div>
+        </div>
+
+        <div id="address-manual" style="display:none">
+          <div class="field-row" style="margin-top:14px">
+            <div class="field">
+              <label>Número</label>
+              <input type="text" id="f-numero" placeholder="Ex: 42">
+            </div>
+            <div class="field">
+              <label>Complemento</label>
+              <input type="text" id="f-complemento" placeholder="Apto, sala...">
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px">
+          <label class="terms-check">
+            <input type="checkbox" id="f-terms">
+            <span>Ao criar minha conta, concordo com os <a href="#">Termos de Uso</a> e <a href="#">Política de Privacidade</a> da ilumix.</span>
+          </label>
+          <div class="field-error" id="err-terms">Você precisa aceitar os termos</div>
+        </div>
+
+        <div class="form-nav">
+          <button class="btn-back" onclick="goStep(2)">Voltar</button>
+          <button class="btn-next" id="btn-step3">
+            <span id="btn-step3-text">Criar conta</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /form-body -->
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+
+  /* ── Step navigation ── */
+  function goStep(n) {
+    document.getElementById('step-' + currentStep).classList.remove('is-active');
+    currentStep = n;
+    document.getElementById('step-' + n).classList.add('is-active');
+    updateStepUI();
+    document.querySelector('.panel-right').scrollTo(0, 0);
+  }
+
+  function updateStepUI() {
+    const titles = ['', 'Criar conta gratuita', 'Seus dados', 'Endereço'];
+    const subs   = [
+      '',
+      'Já tem conta? <a href="login.html">Entrar</a>',
+      'Passo 2 de 3 — Dados pessoais',
+      'Passo 3 de 3 — Onde você mora?',
+    ];
+    document.getElementById('form-title').innerHTML = titles[currentStep].replace(/(\w+)$/, '<b>$1</b>');
+    document.getElementById('form-sub').innerHTML   = subs[currentStep];
+    document.getElementById('progress-fill').style.width = (currentStep / 3 * 100) + '%';
+    document.getElementById('progress-label').textContent = `Passo ${currentStep} de 3`;
+
+    // Sidebar steps
+    for (let i = 1; i <= 3; i++) {
+      const num = document.getElementById('step-num-' + i);
+      const lbl = document.getElementById('step-lbl-' + i);
+      num.classList.remove('active','done');
+      lbl.classList.remove('active','done');
+      if (i < currentStep)  { num.classList.add('done');  lbl.classList.add('done');  num.innerHTML = '✓'; }
+      if (i === currentStep) { num.classList.add('active'); lbl.classList.add('active'); if (num.innerHTML==='✓') num.innerHTML=String(i); }
+      if (i > currentStep)  { num.innerHTML = String(i); }
+    }
+  }
+
+  /* ── Validation helpers ── */
+  function setErr(id, show) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('is-visible', show);
+  }
+  function setFieldErr(inputId, show) {
+    const el = document.getElementById(inputId);
+    if (el) el.classList.toggle('is-error', show);
+  }
+
+  /* ── Password strength ── */
+  document.getElementById('f-password').addEventListener('input', () => {
+    const val = document.getElementById('f-password').value;
+    const strength = document.getElementById('pw-strength');
+    const fill  = document.getElementById('pw-fill');
+    const label = document.getElementById('pw-label');
+    if (!val) { strength.classList.remove('is-visible'); return; }
+    strength.classList.add('is-visible');
+    let score = 0;
+    if (val.length >= 8) score++;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const levels = [
+      { w:'25%',  c:'#B56060', t:'Muito fraca' },
+      { w:'50%',  c:'#D4A832', t:'Fraca' },
+      { w:'75%',  c:'#5BAD6A', t:'Boa' },
+      { w:'100%', c:'#E2B84A', t:'Forte' },
+    ];
+    const l = levels[score - 1] || levels[0];
+    fill.style.width      = l.w;
+    fill.style.background = l.c;
+    label.textContent     = l.t;
+    label.style.color     = l.c;
+  });
+
+  /* ── Phone mask ── */
+  document.getElementById('f-telefone').addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g,'');
+    if (v.length > 11) v = v.slice(0,11);
+    if (v.length > 6) v = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+    else if (v.length > 2) v = `(${v.slice(0,2)}) ${v.slice(2)}`;
+    else if (v.length > 0) v = `(${v}`;
+    e.target.value = v;
+  });
+
+  /* ── CEP mask + auto-fill ── */
+  let cepTimer = null;
+  document.getElementById('f-cep').addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g,'');
+    if (v.length > 8) v = v.slice(0,8);
+    if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5);
+    e.target.value = v;
+    if (v.replace('-','').length === 8) {
+      clearTimeout(cepTimer);
+      cepTimer = setTimeout(() => fetchCEP(v.replace('-','')), 400);
+    } else {
+      document.getElementById('address-block').classList.remove('is-visible');
+      document.getElementById('address-manual').style.display = 'none';
+    }
+  });
+
+  async function fetchCEP(cep) {
+    const statusEl = document.getElementById('cep-status');
+    const blockEl  = document.getElementById('address-block');
+    const manual   = document.getElementById('address-manual');
+
+    statusEl.classList.add('is-visible');
+    document.getElementById('cep-status-text').textContent = 'Buscando endereço...';
+    blockEl.classList.remove('is-visible');
+    setErr('err-cep', false);
+    setFieldErr('f-cep', false);
+    document.getElementById('f-cep').classList.remove('is-ok');
+
+    try {
+      const res  = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+      statusEl.classList.remove('is-visible');
+
+      if (data.erro) {
+        setErr('err-cep', true);
+        setFieldErr('f-cep', true);
+        return;
+      }
+
+      document.getElementById('addr-logradouro').textContent = data.logradouro || '—';
+      document.getElementById('addr-bairro').textContent     = data.bairro     || '—';
+      document.getElementById('addr-cidade').textContent     = data.localidade  || '—';
+      document.getElementById('addr-estado').textContent     = data.uf          || '—';
+      blockEl.classList.add('is-visible');
+      manual.style.display = 'block';
+      document.getElementById('f-cep').classList.add('is-ok');
+
+    } catch(err) {
+      statusEl.classList.remove('is-visible');
+      document.getElementById('cep-status-text').textContent = 'Erro ao buscar. Verifique o CEP.';
+      statusEl.classList.add('is-visible');
+      setTimeout(() => statusEl.classList.remove('is-visible'), 3000);
+    }
+  }
+
+  /* ── Step 1 submit ── */
+  document.getElementById('btn-step1').addEventListener('click', () => {
+    let ok = true;
+    const email = document.getElementById('f-email').value.trim();
+    const pw    = document.getElementById('f-password').value;
+    const pw2   = document.getElementById('f-password2').value;
+
+    setErr('err-email', false); setFieldErr('f-email', false);
+    setErr('err-pw', false);    setFieldErr('f-password', false);
+    setErr('err-pw2', false);   setFieldErr('f-password2', false);
+
+    if (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) { setErr('err-email',true); setFieldErr('f-email',true); ok=false; }
+    if (pw.length < 8) { setErr('err-pw',true); setFieldErr('f-password',true); ok=false; }
+    if (pw !== pw2)    { setErr('err-pw2',true); setFieldErr('f-password2',true); ok=false; }
+    if (ok) goStep(2);
+  });
+
+  /* ── Step 2 submit ── */
+  document.getElementById('btn-step2').addEventListener('click', () => {
+    let ok = true;
+    const nome   = document.getElementById('f-nome').value.trim();
+    const sobre  = document.getElementById('f-sobrenome').value.trim();
+    const nasc   = document.getElementById('f-nascimento').value;
+
+    setErr('err-nome',false);    setFieldErr('f-nome',false);
+    setErr('err-sobrenome',false); setFieldErr('f-sobrenome',false);
+    setErr('err-nasc',false);    setFieldErr('f-nascimento',false);
+
+    if (!nome)  { setErr('err-nome',true);     setFieldErr('f-nome',true); ok=false; }
+    if (!sobre) { setErr('err-sobrenome',true); setFieldErr('f-sobrenome',true); ok=false; }
+    if (!nasc)  { setErr('err-nasc',true);      setFieldErr('f-nascimento',true); ok=false; }
+    else {
+      const age = (Date.now() - new Date(nasc).getTime()) / (1000*60*60*24*365.25);
+      if (age < 18) {
+        document.getElementById('err-nasc').textContent = 'Você precisa ter ao menos 18 anos';
+        setErr('err-nasc',true); setFieldErr('f-nascimento',true); ok=false;
+      }
+    }
+    if (ok) goStep(3);
+  });
+
+  /* ── Step 3 submit ── */
+  document.getElementById('btn-step3').addEventListener('click', async () => {
+    let ok = true;
+    const cep   = document.getElementById('f-cep').value.replace('-','');
+    const terms = document.getElementById('f-terms').checked;
+
+    setErr('err-cep',false);   setFieldErr('f-cep',false);
+    setErr('err-terms',false);
+
+    if (cep.length !== 8) { setErr('err-cep',true); setFieldErr('f-cep',true); ok=false; }
+    if (!terms) { setErr('err-terms',true); ok=false; }
+    if (!ok) return;
+
+    const btn = document.getElementById('btn-step3');
+    btn.classList.add('is-loading');
+    document.getElementById('btn-step3-text').textContent = 'Criando conta...';
+    btn.querySelector('svg').style.display = 'none';
+
+    // Insert spinner
+    const sp = document.createElement('div');
+    sp.className = 'spinner';
+    btn.insertBefore(sp, btn.firstChild);
+
+    // Simulate API
+    await new Promise(r => setTimeout(r, 2000));
+
+    document.getElementById('form-body').style.display = 'none';
+    document.getElementById('success-screen').classList.add('is-visible');
+
+    setTimeout(() => { window.location.href = 'index.html'; }, 2500);
+  });
+</script>
+</body>
+</html>

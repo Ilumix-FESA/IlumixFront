@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0D0C07">
+  <title>ilumix — Smart Lighting Ecosystem</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --amber:      #E2B84A;
+      --amber-warm: #D4A832;
+      --amber-deep: #C49020;
+      --amber-soft: #EDD070;
+      --amber-dim:  rgba(226,184,74,0.10);
+      --amber-glow: rgba(226,184,74,0.32);
+      --linen:      #F0E8D0;
+      --dark-0:     #0D0C07;
+      --dark-1:     #141209;
+      --dark-2:     #1C1A10;
+      --dark-3:     #232115;
+      --dark-4:     #2E2C1C;
+      --dark-5:     #3A3822;
+      --text-hi:    #F0E8D0;
+      --text-mid:   #948E76;
+      --text-lo:    #524E38;
+      --border:     rgba(226,184,74,0.08);
+      --border-h:   rgba(226,184,74,0.22);
+      --green:      #5BAD6A;
+      --font: 'Sora', system-ui, sans-serif;
+      --ease: 0.2s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font); background: var(--dark-0); color: var(--text-hi); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+    ::-webkit-scrollbar { width: 3px; } ::-webkit-scrollbar-thumb { background: rgba(226,184,74,0.18); border-radius: 2px; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 6vw; height: 68px;
+      background: rgba(13,12,7,0.85);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      transition: background 0.3s;
+    }
+    .nav-logo { display: flex; align-items: center; gap: 12px; }
+    .nav-logo svg { width: 32px; height: 32px; }
+    .nav-logo-text { font-size: 18px; font-weight: 300; letter-spacing: -0.3px; }
+    .nav-logo-text b { font-weight: 600; color: var(--amber); }
+    .nav-links { display: flex; align-items: center; gap: 32px; }
+    .nav-links a { font-size: 13px; font-weight: 400; color: var(--text-mid); transition: color var(--ease); }
+    .nav-links a:hover { color: var(--text-hi); }
+    .nav-cta { display: flex; align-items: center; gap: 12px; }
+    .btn-ghost { padding: 8px 18px; border: 1px solid var(--border-h); border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-mid); cursor: pointer; transition: all var(--ease); font-family: var(--font); background: transparent; }
+    .btn-ghost:hover { border-color: var(--amber); color: var(--amber); }
+    .btn-amber { padding: 8px 20px; background: var(--amber); border: none; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--dark-0); cursor: pointer; transition: all var(--ease); font-family: var(--font); }
+    .btn-amber:hover { background: var(--amber-soft); }
+    .nav-mobile-toggle { display: none; background: none; border: none; cursor: pointer; color: var(--text-mid); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      padding: 100px 6vw 80px;
+    }
+    .hero-bg {
+      position: absolute; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 60% 40%, rgba(226,184,74,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 80% 20%, rgba(226,184,74,0.05) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 20% 80%, rgba(20,18,9,0.8) 0%, transparent 70%);
+    }
+    /* Animated grid */
+    .hero-grid {
+      position: absolute; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(226,184,74,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(226,184,74,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+    }
+    /* Floating orbs */
+    .orb {
+      position: absolute; border-radius: 50%; pointer-events: none;
+      animation: float 8s ease-in-out infinite;
+    }
+    .orb-1 { width: 360px; height: 360px; top: 10%; right: 8%; background: radial-gradient(circle at 40% 35%, rgba(226,184,74,0.12), rgba(196,144,32,0.04) 60%, transparent 100%); animation-duration: 9s; }
+    .orb-2 { width: 200px; height: 200px; top: 60%; right: 20%; background: radial-gradient(circle at 40% 35%, rgba(226,184,74,0.06), transparent 70%); animation-duration: 7s; animation-delay: -3s; }
+    .orb-3 { width: 120px; height: 120px; top: 30%; left: 5%; background: radial-gradient(circle at 40% 35%, rgba(226,184,74,0.04), transparent 70%); animation-duration: 11s; animation-delay: -6s; }
+    @keyframes float { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-28px) scale(1.03)} }
+
+    .hero-content { position: relative; z-index: 1; max-width: 640px; }
+    .hero-label { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1px solid var(--border-h); border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; color: var(--amber); margin-bottom: 32px; opacity: 0; animation: fadeUp 0.6s 0.1s ease forwards; }
+    .hero-label-dot { width: 6px; height: 6px; background: var(--amber); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+    .hero-h1 { font-size: clamp(36px, 6vw, 72px); font-weight: 200; line-height: 1.08; letter-spacing: -1.5px; color: var(--text-hi); margin-bottom: 24px; opacity: 0; animation: fadeUp 0.7s 0.2s ease forwards; }
+    .hero-h1 b { font-weight: 600; color: var(--amber); }
+    .hero-h1 em { font-style: normal; color: var(--amber-soft); }
+    .hero-sub { font-size: 16px; font-weight: 300; line-height: 1.7; color: var(--text-mid); max-width: 480px; margin-bottom: 44px; opacity: 0; animation: fadeUp 0.7s 0.35s ease forwards; }
+    .hero-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; opacity: 0; animation: fadeUp 0.7s 0.5s ease forwards; }
+    .btn-hero { padding: 14px 30px; background: var(--amber); border: none; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--dark-0); cursor: pointer; font-family: var(--font); transition: all var(--ease); display: inline-flex; align-items: center; gap: 8px; }
+    .btn-hero:hover { background: var(--amber-soft); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(226,184,74,0.28); }
+    .btn-hero-ghost { padding: 14px 28px; border: 1px solid var(--border-h); border-radius: 8px; font-size: 14px; font-weight: 400; color: var(--text-mid); cursor: pointer; font-family: var(--font); transition: all var(--ease); display: inline-flex; align-items: center; gap: 8px; background: transparent; }
+    .btn-hero-ghost:hover { border-color: var(--amber); color: var(--amber); }
+    .hero-stats { display: flex; gap: 40px; margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--border); opacity: 0; animation: fadeUp 0.7s 0.65s ease forwards; }
+    .hero-stat-val { font-size: 28px; font-weight: 200; color: var(--text-hi); letter-spacing: -0.5px; }
+    .hero-stat-val b { font-weight: 600; color: var(--amber); }
+    .hero-stat-label { font-size: 11px; color: var(--text-lo); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Hero visual (right side) */
+    .hero-visual { position: absolute; right: 6vw; top: 50%; transform: translateY(-50%); z-index: 1; display: flex; align-items: center; justify-content: center; opacity: 0; animation: fadeIn 1s 0.8s ease forwards; }
+    .hero-phone { width: 240px; height: 480px; background: var(--dark-2); border: 1px solid var(--border-h); border-radius: 36px; overflow: hidden; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(226,184,74,0.1); }
+    .hero-phone::before { content:''; position:absolute; inset:0; background: linear-gradient(180deg, rgba(226,184,74,0.06) 0%, transparent 40%); }
+    .phone-screen { padding: 20px 16px; }
+    .phone-status { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; font-size:10px; color:var(--text-lo); }
+    .phone-greeting { font-size:14px; font-weight:300; color:var(--text-hi); margin-bottom:4px; }
+    .phone-sub { font-size:10px; color:var(--text-lo); margin-bottom:16px; }
+    .phone-room { background:var(--dark-3); border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .phone-room-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .phone-room-dot.on  { background:var(--amber); box-shadow: 0 0 6px var(--amber-glow); }
+    .phone-room-dot.off { background:var(--dark-5); }
+    .phone-room-name { font-size:11px; font-weight:500; color:var(--text-hi); }
+    .phone-room-meta { font-size:9px; color:var(--text-lo); }
+    .phone-orb-wrap { display:flex; justify-content:center; margin:12px 0; }
+    .phone-orb { width:64px;height:64px;border-radius:50%; background: radial-gradient(circle at 38% 33%, var(--amber-soft), var(--amber-deep) 65%); box-shadow: 0 0 24px var(--amber-glow); animation: glowPulse 3s ease-in-out infinite; }
+    @keyframes glowPulse { 0%,100%{box-shadow:0 0 16px var(--amber-glow)}50%{box-shadow:0 0 36px var(--amber-glow),0 0 64px rgba(226,184,74,0.12)} }
+    .phone-label { font-size:10px; text-align:center; color:var(--text-mid); }
+    .phone-ring1 { position:absolute; width:290px;height:290px;border-radius:50%; border:1px solid rgba(226,184,74,0.1); top:50%;left:50%;transform:translate(-50%,-50%); animation: pulseRing 4s ease-in-out infinite; }
+    .phone-ring2 { position:absolute; width:380px;height:380px;border-radius:50%; border:1px solid rgba(226,184,74,0.05); top:50%;left:50%;transform:translate(-50%,-50%); animation: pulseRing 4s ease-in-out infinite 1.3s; }
+    @keyframes pulseRing { 0%,100%{opacity:0.3;transform:translate(-50%,-50%) scale(1)} 50%{opacity:0.7;transform:translate(-50%,-50%) scale(1.04)} }
+
+    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    /* ── LOGOS BAR ── */
+    .logos-bar { padding: 36px 6vw; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); overflow: hidden; position: relative; }
+    .logos-label { text-align:center; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--text-lo); margin-bottom:28px; }
+    .logos-track { display:flex; gap:60px; align-items:center; animation: marquee 22s linear infinite; width: max-content; }
+    .logos-track:hover { animation-play-state: paused; }
+    .logo-item { font-size:13px; font-weight:600; color:var(--text-lo); letter-spacing:1px; text-transform:uppercase; white-space:nowrap; opacity:0.5; transition:opacity var(--ease); }
+    .logo-item:hover { opacity:0.9; }
+    @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    .logos-fade { position:absolute; top:0; bottom:0; width:120px; z-index:2; pointer-events:none; }
+    .logos-fade-l { left:0; background:linear-gradient(90deg, var(--dark-0), transparent); }
+    .logos-fade-r { right:0; background:linear-gradient(-90deg, var(--dark-0), transparent); }
+
+    /* ── SECTIONS ── */
+    section { padding: 100px 6vw; }
+    .section-label { font-size:10px; font-weight:500; letter-spacing:2.5px; text-transform:uppercase; color:var(--amber); margin-bottom:16px; }
+    .section-h2 { font-size: clamp(28px, 4vw, 48px); font-weight:200; letter-spacing:-1px; color:var(--text-hi); line-height:1.15; margin-bottom:16px; }
+    .section-h2 b { font-weight:600; }
+    .section-sub { font-size:15px; font-weight:300; color:var(--text-mid); line-height:1.7; max-width:520px; }
+
+    /* ── FEATURES ── */
+    .features-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:2px; margin-top:64px; border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+    .feature-card { background:var(--dark-1); padding:40px 32px; transition:background var(--ease); position:relative; }
+    .feature-card::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg, rgba(226,184,74,0.04), transparent); opacity:0; transition:opacity var(--ease); }
+    .feature-card:hover { background:var(--dark-2); }
+    .feature-card:hover::before { opacity:1; }
+    .feat-icon { width:48px;height:48px; background:var(--amber-dim); border-radius:12px; display:flex; align-items:center; justify-content:center; margin-bottom:24px; }
+    .feat-icon svg { width:22px;height:22px; color:var(--amber); stroke:currentColor; }
+    .feat-title { font-size:16px; font-weight:600; color:var(--text-hi); margin-bottom:10px; }
+    .feat-body  { font-size:13px; font-weight:300; color:var(--text-mid); line-height:1.7; }
+
+    /* ── HOW IT WORKS ── */
+    .how-grid { display:grid; grid-template-columns:1fr 1fr; gap:80px; align-items:center; margin-top:64px; }
+    .how-steps { display:flex; flex-direction:column; gap:0; }
+    .how-step { display:flex; gap:24px; padding:28px 0; border-bottom:1px solid var(--border); cursor:pointer; transition:all var(--ease); }
+    .how-step:first-child { border-top:1px solid var(--border); }
+    .how-step.is-active .how-step-num { background:var(--amber); color:var(--dark-0); }
+    .how-step.is-active .how-step-title { color:var(--amber); }
+    .how-step-num { width:36px;height:36px; border-radius:50%; border:1px solid var(--border-h); display:flex; align-items:center;justify-content:center; font-size:12px; font-weight:600; color:var(--text-mid); flex-shrink:0; transition:all var(--ease); }
+    .how-step-title { font-size:15px; font-weight:500; color:var(--text-hi); margin-bottom:6px; }
+    .how-step-body  { font-size:13px; font-weight:300; color:var(--text-mid); line-height:1.7; }
+    .how-visual { position:relative; display:flex; align-items:center; justify-content:center; }
+    .how-screen { width:100%; max-width:360px; background:var(--dark-2); border:1px solid var(--border-h); border-radius:20px; padding:24px; box-shadow:0 32px 80px rgba(0,0,0,0.5); }
+    .how-screen-title { font-size:11px; font-weight:500; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-mid); margin-bottom:20px; }
+    .scene-row { display:flex; align-items:center; gap:14px; padding:14px; background:var(--dark-3); border-radius:10px; margin-bottom:8px; border:1px solid var(--border); cursor:pointer; transition:all var(--ease); }
+    .scene-row:hover, .scene-row.is-active { border-color:rgba(226,184,74,0.25); background:var(--dark-4); }
+    .scene-row.is-active .scene-row-dot { background:var(--amber); box-shadow:0 0 8px var(--amber-glow); }
+    .scene-row-dot { width:10px;height:10px;border-radius:50%;background:var(--dark-5);flex-shrink:0;transition:all 0.3s; }
+    .scene-row-name { font-size:13px;font-weight:500;color:var(--text-hi);flex:1; }
+    .scene-row-val  { font-size:11px;color:var(--text-mid); }
+
+    /* ── PRICING ── */
+    .pricing-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:64px; }
+    .price-card { background:var(--dark-2); border:1px solid var(--border); border-radius:18px; padding:36px 28px; position:relative; transition:all var(--ease); }
+    .price-card:hover { border-color:var(--border-h); transform:translateY(-4px); }
+    .price-card.featured { background:var(--dark-3); border-color:rgba(226,184,74,0.3); }
+    .price-card.featured::before { content:'Mais Popular'; position:absolute; top:-12px; left:50%;transform:translateX(-50%); background:var(--amber); color:var(--dark-0); font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; padding:4px 14px; border-radius:999px; white-space:nowrap; }
+    .price-name   { font-size:11px; font-weight:500; letter-spacing:2px; text-transform:uppercase; color:var(--text-mid); margin-bottom:16px; }
+    .price-amount { font-size:40px; font-weight:200; color:var(--text-hi); letter-spacing:-1px; line-height:1; margin-bottom:4px; }
+    .price-amount b { font-weight:600; }
+    .price-period { font-size:12px; color:var(--text-lo); margin-bottom:28px; }
+    .price-sep { height:1px; background:var(--border); margin-bottom:28px; }
+    .price-feat { font-size:13px; color:var(--text-mid); margin-bottom:12px; display:flex; align-items:flex-start; gap:10px; line-height:1.5; }
+    .price-feat svg { width:14px;height:14px;color:var(--green);flex-shrink:0;margin-top:2px; }
+    .price-btn { margin-top:32px; width:100%; padding:12px; border-radius:8px; font-size:13px; font-weight:600; font-family:var(--font); cursor:pointer; transition:all var(--ease); }
+    .price-btn-primary { background:var(--amber); border:none; color:var(--dark-0); }
+    .price-btn-primary:hover { background:var(--amber-soft); }
+    .price-btn-ghost { background:transparent; border:1px solid var(--border-h); color:var(--text-mid); }
+    .price-btn-ghost:hover { border-color:var(--amber); color:var(--amber); }
+
+    /* ── TESTIMONIALS ── */
+    .testimonials-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:64px; }
+    .testimonial { background:var(--dark-2); border:1px solid var(--border); border-radius:14px; padding:28px; transition:border-color var(--ease); }
+    .testimonial:hover { border-color:var(--border-h); }
+    .test-stars { display:flex; gap:3px; margin-bottom:16px; }
+    .test-star { color:var(--amber); font-size:12px; }
+    .test-text { font-size:14px; font-weight:300; line-height:1.8; color:var(--text-mid); margin-bottom:20px; }
+    .test-text em { color:var(--text-hi); font-style:normal; font-weight:400; }
+    .test-author { display:flex; align-items:center; gap:12px; }
+    .test-avatar { width:38px;height:38px;border-radius:50%;background:var(--dark-4);border:1px solid var(--border); display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--amber); }
+    .test-name   { font-size:13px;font-weight:500;color:var(--text-hi); }
+    .test-role   { font-size:11px;color:var(--text-lo); }
+
+    /* ── CTA BANNER ── */
+    .cta-section { padding:100px 6vw; }
+    .cta-inner { background:var(--dark-2); border:1px solid var(--border-h); border-radius:24px; padding:80px; text-align:center; position:relative; overflow:hidden; }
+    .cta-inner::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse 70% 60% at 50% 50%, rgba(226,184,74,0.06), transparent 70%); pointer-events:none; }
+    .cta-h2 { font-size:clamp(28px,4vw,52px); font-weight:200; letter-spacing:-1px; color:var(--text-hi); margin-bottom:16px; position:relative; }
+    .cta-h2 b { font-weight:600; color:var(--amber); }
+    .cta-sub { font-size:15px; font-weight:300; color:var(--text-mid); margin-bottom:44px; max-width:460px; margin-left:auto; margin-right:auto; line-height:1.7; position:relative; }
+    .cta-btns { display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:wrap; position:relative; }
+
+    /* ── FOOTER ── */
+    footer { padding:60px 6vw 40px; border-top:1px solid var(--border); }
+    .footer-grid { display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr; gap:48px; margin-bottom:60px; }
+    .footer-brand-name { font-size:18px;font-weight:300;letter-spacing:-0.3px;margin-bottom:12px; }
+    .footer-brand-name b { font-weight:600;color:var(--amber); }
+    .footer-brand-desc { font-size:13px;font-weight:300;color:var(--text-mid);line-height:1.7;margin-bottom:24px; }
+    .footer-col-title { font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid);margin-bottom:16px; }
+    .footer-link { display:block;font-size:13px;font-weight:300;color:var(--text-lo);margin-bottom:10px;transition:color var(--ease); }
+    .footer-link:hover { color:var(--text-hi); }
+    .footer-bottom { display:flex;align-items:center;justify-content:space-between;padding-top:28px;border-top:1px solid var(--border);font-size:12px;color:var(--text-lo); }
+
+    /* ── Scroll reveal ── */
+    .reveal { opacity:0; transform:translateY(24px); transition:opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.is-visible { opacity:1; transform:translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:1100px) {
+      .hero-visual { display:none; }
+      .hero { padding:120px 6vw 60px; }
+      .how-grid { grid-template-columns:1fr; gap:40px; }
+      .how-visual { order:-1; }
+    }
+    @media(max-width:900px) {
+      .features-grid { grid-template-columns:1fr; }
+      .pricing-grid  { grid-template-columns:1fr; }
+      .testimonials-grid { grid-template-columns:1fr; }
+      .footer-grid { grid-template-columns:1fr 1fr; gap:36px; }
+      .nav-links { display:none; }
+      .nav-mobile-toggle { display:block; }
+      .cta-inner { padding:48px 24px; }
+    }
+    @media(max-width:600px) {
+      section { padding:64px 6vw; }
+      .hero-stats { gap:24px; }
+      .footer-grid { grid-template-columns:1fr; }
+      .footer-bottom { flex-direction:column; gap:12px; text-align:center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">
+    <svg viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="6" fill="#E2B84A" opacity=".92"/>
+      <circle cx="16" cy="16" r="10" stroke="#E2B84A" stroke-width="1" opacity=".35"/>
+      <circle cx="16" cy="16" r="14" stroke="#E2B84A" stroke-width=".5" opacity=".12"/>
+      <line x1="16" y1="2"  x2="16" y2="6"  stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+      <line x1="16" y1="26" x2="16" y2="30" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+      <line x1="2"  y1="16" x2="6"  y2="16" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+      <line x1="26" y1="16" x2="30" y2="16" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+    </svg>
+    <div class="nav-logo-text">ilu<b>mix</b></div>
+  </div>
+  <div class="nav-links">
+    <a href="#features">Recursos</a>
+    <a href="#how">Como funciona</a>
+    <a href="#pricing">Planos</a>
+    <a href="#depoimentos">Depoimentos</a>
+  </div>
+  <div class="nav-cta">
+    <a href="login.html"><button class="btn-ghost">Entrar</button></a>
+    <a href="cadastro.html"><button class="btn-amber">Começar grátis</button></a>
+    <button class="nav-mobile-toggle" onclick="document.getElementById('mobile-menu').classList.toggle('is-open')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div id="mobile-menu" style="display:none;position:fixed;inset:0;z-index:99;background:var(--dark-1);padding:80px 6vw 40px;flex-direction:column;gap:8px;">
+  <style>#mobile-menu.is-open{display:flex!important}</style>
+  <a href="#features" onclick="document.getElementById('mobile-menu').classList.remove('is-open')" style="padding:16px 0;font-size:18px;font-weight:300;color:var(--text-hi);border-bottom:1px solid var(--border)">Recursos</a>
+  <a href="#how"      onclick="document.getElementById('mobile-menu').classList.remove('is-open')" style="padding:16px 0;font-size:18px;font-weight:300;color:var(--text-hi);border-bottom:1px solid var(--border)">Como funciona</a>
+  <a href="#pricing"  onclick="document.getElementById('mobile-menu').classList.remove('is-open')" style="padding:16px 0;font-size:18px;font-weight:300;color:var(--text-hi);border-bottom:1px solid var(--border)">Planos</a>
+  <div style="margin-top:32px;display:flex;flex-direction:column;gap:12px">
+    <a href="login.html"><button class="btn-ghost" style="width:100%;padding:14px;font-size:14px">Entrar</button></a>
+    <a href="cadastro.html"><button class="btn-amber" style="width:100%;padding:14px;font-size:14px">Começar grátis</button></a>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="hero-content">
+    <div class="hero-label">
+      <span class="hero-label-dot"></span>
+      Smart Lighting Ecosystem
+    </div>
+    <h1 class="hero-h1">
+      Iluminação que<br>
+      <b>pensa</b> com você.<br>
+      <em>Automática.</em>
+    </h1>
+    <p class="hero-sub">
+      Controle cada lâmpada da sua casa pelo celular, crie cenas de luz, automatize horários e economize até 40% na conta de energia — tudo em um ecossistema conectado.
+    </p>
+    <div class="hero-actions">
+      <a href="cadastro.html"><button class="btn-hero">
+        Começar gratuitamente
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button></a>
+      <a href="#how"><button class="btn-hero-ghost">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+        Ver demonstração
+      </button></a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-val"><b>40%</b></div>
+        <div class="hero-stat-label">Economia de energia</div>
+      </div>
+      <div>
+        <div class="hero-stat-val"><b>2 min</b></div>
+        <div class="hero-stat-label">Para configurar</div>
+      </div>
+      <div>
+        <div class="hero-stat-val"><b>100%</b></div>
+        <div class="hero-stat-label">Controle pelo app</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="phone-ring1"></div>
+    <div class="phone-ring2"></div>
+    <div class="hero-phone">
+      <div class="phone-screen">
+        <div class="phone-status">
+          <span>ilumix</span>
+          <span>22:14</span>
+        </div>
+        <div class="phone-greeting">Boa noite, Casa</div>
+        <div class="phone-sub">8 luzes ativas · 42W</div>
+        <div class="phone-orb-wrap">
+          <div class="phone-orb"></div>
+        </div>
+        <div class="phone-label" style="margin-bottom:12px">Sala de Estar · 75%</div>
+        <div class="phone-room">
+          <div class="phone-room-dot on"></div>
+          <div><div class="phone-room-name">Sala de Estar</div><div class="phone-room-meta">3 luzes · 75% brilho</div></div>
+        </div>
+        <div class="phone-room">
+          <div class="phone-room-dot on"></div>
+          <div><div class="phone-room-name">Quarto</div><div class="phone-room-meta">2 luzes · 20% brilho</div></div>
+        </div>
+        <div class="phone-room">
+          <div class="phone-room-dot off"></div>
+          <div><div class="phone-room-name">Cozinha</div><div class="phone-room-meta">desligado</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LOGOS BAR -->
+<div class="logos-bar">
+  <div class="logos-label">Compatível com os principais sistemas</div>
+  <div class="logos-fade logos-fade-l"></div>
+  <div class="logos-fade logos-fade-r"></div>
+  <div class="logos-track" id="logos-track">
+    <span class="logo-item">Amazon Alexa</span>
+    <span class="logo-item">Google Home</span>
+    <span class="logo-item">Apple HomeKit</span>
+    <span class="logo-item">IFTTT</span>
+    <span class="logo-item">Zigbee 3.0</span>
+    <span class="logo-item">Z-Wave</span>
+    <span class="logo-item">Wi-Fi 2.4GHz</span>
+    <span class="logo-item">Amazon Alexa</span>
+    <span class="logo-item">Google Home</span>
+    <span class="logo-item">Apple HomeKit</span>
+    <span class="logo-item">IFTTT</span>
+    <span class="logo-item">Zigbee 3.0</span>
+    <span class="logo-item">Z-Wave</span>
+    <span class="logo-item">Wi-Fi 2.4GHz</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="reveal">
+    <div class="section-label">Recursos</div>
+    <h2 class="section-h2">Tudo que você precisa para<br><b>iluminar com inteligência</b></h2>
+    <p class="section-sub">Uma plataforma completa para gerenciar cada aspecto da iluminação da sua casa ou empresa.</p>
+  </div>
+  <div class="features-grid reveal" style="transition-delay:0.15s">
+    <div class="feature-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M9 21h6m-6-3h6m-3-15a7 7 0 017 7c0 2.5-1.3 4.7-3 6H8c-1.7-1.3-3-3.5-3-6a7 7 0 017-7z"/></svg>
+      </div>
+      <div class="feat-title">Controle Individual</div>
+      <div class="feat-body">Configure cada lâmpada separadamente — brilho, cor de temperatura e cor RGB. Personalize o ambiente exatamente como imagina.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="feat-title">Automação por Horário</div>
+      <div class="feat-body">Crie rotinas que ativam automaticamente as cenas certas no horário certo. Acorde com luz suave, trabalhe com foco máximo.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M12 1a3 3 0 013 3v8a3 3 0 01-6 0V4a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/></svg>
+      </div>
+      <div class="feat-title">Comandos de Voz</div>
+      <div class="feat-body">Grave frases personalizadas e dispare qualquer ação com a sua voz. Integração nativa com Alexa e Google Assistant.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      </div>
+      <div class="feat-title">Monitoramento de Energia</div>
+      <div class="feat-body">Acompanhe o consumo em tempo real por cômodo e por lâmpada. Relatórios claros que mostram exatamente quanto você economiza.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      </div>
+      <div class="feat-title">Conexão Wi-Fi</div>
+      <div class="feat-body">Setup em menos de 2 minutos via Wi-Fi 2.4GHz. Nenhum hub extra necessário. Compatível com a maioria dos roteadores domésticos.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feat-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      </div>
+      <div class="feat-title">Cenas Inteligentes</div>
+      <div class="feat-body">Crie e salve ambientes completos: luminosidade, temperatura e cor de todas as lâmpadas com um único toque.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" style="background:var(--dark-1)">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="reveal">
+      <div class="section-label">Como funciona</div>
+      <h2 class="section-h2">Da tomada ao<br><b>controle total</b> em minutos</h2>
+    </div>
+    <div class="how-grid">
+      <div class="how-steps reveal">
+        <div class="how-step is-active" onclick="setStep(0)">
+          <div class="how-step-num">01</div>
+          <div>
+            <div class="how-step-title">Conecte as lâmpadas</div>
+            <div class="how-step-body">Troque suas lâmpadas comuns pelas ilumix e conecte-as à sua rede Wi-Fi. O app detecta automaticamente.</div>
+          </div>
+        </div>
+        <div class="how-step" onclick="setStep(1)">
+          <div class="how-step-num">02</div>
+          <div>
+            <div class="how-step-title">Organize por cômodos</div>
+            <div class="how-step-body">Agrupe as lâmpadas por ambiente. Crie quantos cômodos precisar e renomeie como quiser.</div>
+          </div>
+        </div>
+        <div class="how-step" onclick="setStep(2)">
+          <div class="how-step-num">03</div>
+          <div>
+            <div class="how-step-title">Crie suas cenas</div>
+            <div class="how-step-body">Defina ambientes personalizados para cada momento do dia: trabalho, descanso, cinema, jantar.</div>
+          </div>
+        </div>
+        <div class="how-step" onclick="setStep(3)">
+          <div class="how-step-num">04</div>
+          <div>
+            <div class="how-step-title">Automatize tudo</div>
+            <div class="how-step-body">Configure rotinas por horário ou por voz. A casa passa a funcionar sozinha do jeito que você prefere.</div>
+          </div>
+        </div>
+      </div>
+      <div class="how-visual reveal" style="transition-delay:0.2s">
+        <div class="how-screen">
+          <div class="how-screen-title">Cenas Ativas</div>
+          <div class="scene-row is-active" onclick="setSceneRow(this)"><div class="scene-row-dot"></div><div class="scene-row-name">Modo Noturno</div><div class="scene-row-val">20% · 2700K</div></div>
+          <div class="scene-row" onclick="setSceneRow(this)"><div class="scene-row-dot"></div><div class="scene-row-name">Manhã Energizante</div><div class="scene-row-val">100% · 6500K</div></div>
+          <div class="scene-row" onclick="setSceneRow(this)"><div class="scene-row-dot"></div><div class="scene-row-name">Foco Total</div><div class="scene-row-val">80% · 5000K</div></div>
+          <div class="scene-row" onclick="setSceneRow(this)"><div class="scene-row-dot"></div><div class="scene-row-name">Cinema em Casa</div><div class="scene-row-val">5% · 2200K</div></div>
+          <div style="margin-top:20px;padding:14px;background:var(--dark-4);border-radius:10px;text-align:center">
+            <div style="font-size:11px;color:var(--text-lo);margin-bottom:4px">Próxima rotina</div>
+            <div style="font-size:16px;font-weight:300;color:var(--amber)">06:30 <span style="font-size:11px;color:var(--text-mid)">Despertar Suave</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="reveal" style="text-align:center">
+    <div class="section-label">Planos</div>
+    <h2 class="section-h2" style="margin:0 auto 16px">Simples. <b>Transparente.</b> Justo.</h2>
+    <p class="section-sub" style="margin:0 auto">Comece gratuitamente e expanda conforme sua casa cresce.</p>
+  </div>
+  <div class="pricing-grid reveal" style="transition-delay:0.15s">
+    <div class="price-card">
+      <div class="price-name">Starter</div>
+      <div class="price-amount"><b>Grátis</b></div>
+      <div class="price-period">para sempre</div>
+      <div class="price-sep"></div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Até 5 lâmpadas</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 1 cômodo</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> 3 cenas</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> App mobile</div>
+      <a href="cadastro.html"><button class="price-btn price-btn-ghost">Começar grátis</button></a>
+    </div>
+    <div class="price-card featured">
+      <div class="price-name">Casa</div>
+      <div class="price-amount">R$<b>29</b></div>
+      <div class="price-period">/mês · cobrado mensalmente</div>
+      <div class="price-sep"></div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Lâmpadas ilimitadas</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Cômodos ilimitados</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Cenas e rotinas ilimitadas</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Comandos de voz</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Relatórios de energia</div>
+      <a href="cadastro.html"><button class="price-btn price-btn-primary">Assinar agora</button></a>
+    </div>
+    <div class="price-card">
+      <div class="price-name">Empresarial</div>
+      <div class="price-amount">R$<b>99</b></div>
+      <div class="price-period">/mês · por imóvel</div>
+      <div class="price-sep"></div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Tudo do plano Casa</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Multi-imóveis</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Múltiplos usuários</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> API de integração</div>
+      <div class="price-feat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Suporte prioritário</div>
+      <a href="cadastro.html"><button class="price-btn price-btn-ghost">Falar com vendas</button></a>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="depoimentos" style="background:var(--dark-1)">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="reveal" style="text-align:center">
+      <div class="section-label">Depoimentos</div>
+      <h2 class="section-h2" style="margin:0 auto 16px">O que nossos<br><b>clientes dizem</b></h2>
+    </div>
+    <div class="testimonials-grid reveal" style="transition-delay:0.15s">
+      <div class="testimonial">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">Instalei em 10 minutos e já estava controlando tudo pelo celular. <em>Reduzi 35% na conta de luz</em> no primeiro mês. Simplesmente incrível.</div>
+        <div class="test-author"><div class="test-avatar">R</div><div><div class="test-name">Ricardo Mendes</div><div class="test-role">Arquiteto, São Paulo</div></div></div>
+      </div>
+      <div class="testimonial">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">A funcionalidade de cenas mudou completamente minha rotina. <em>Modo cinema ativado com um toque</em>, modo trabalho que liga sozinho às 8h.</div>
+        <div class="test-author"><div class="test-avatar">A</div><div><div class="test-name">Ana Carvalho</div><div class="test-role">Designer, Belo Horizonte</div></div></div>
+      </div>
+      <div class="testimonial">
+        <div class="test-stars">★★★★★</div>
+        <div class="test-text">Uso nos três andares do escritório. <em>Controle centralizado, relatórios claros e economia</em> real comprovada mês a mês. Vale muito o investimento.</div>
+        <div class="test-author"><div class="test-avatar">M</div><div><div class="test-name">Marcos Lima</div><div class="test-role">CEO, Startup de Tech</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <div class="cta-inner reveal">
+    <h2 class="cta-h2">Pronto para iluminar<br><b>de forma inteligente?</b></h2>
+    <p class="cta-sub">Comece gratuitamente. Sem cartão de crédito. Configure em menos de 2 minutos.</p>
+    <div class="cta-btns">
+      <a href="cadastro.html"><button class="btn-hero">
+        Criar conta gratuita
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button></a>
+      <a href="login.html"><button class="btn-hero-ghost">Já tenho conta</button></a>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand-name">ilu<b>mix</b></div>
+      <p class="footer-brand-desc">O ecossistema de iluminação inteligente que combina design, tecnologia e economia para transformar o ambiente onde você vive.</p>
+      <div style="display:flex;gap:12px">
+        <div style="width:34px;height:34px;background:var(--dark-3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--border)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-mid)" stroke-width="1.6"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+        </div>
+        <div style="width:34px;height:34px;background:var(--dark-3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--border)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-mid)" stroke-width="1.6"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+        </div>
+        <div style="width:34px;height:34px;background:var(--dark-3);border:1px solid var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s" onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--border)'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-mid)" stroke-width="1.6"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="footer-col-title">Produto</div>
+      <a href="#features" class="footer-link">Recursos</a>
+      <a href="#pricing" class="footer-link">Preços</a>
+      <a href="#" class="footer-link">Changelog</a>
+      <a href="#" class="footer-link">Roadmap</a>
+    </div>
+    <div>
+      <div class="footer-col-title">Empresa</div>
+      <a href="#" class="footer-link">Sobre nós</a>
+      <a href="#" class="footer-link">Blog</a>
+      <a href="#" class="footer-link">Carreiras</a>
+      <a href="#" class="footer-link">Contato</a>
+    </div>
+    <div>
+      <div class="footer-col-title">Legal</div>
+      <a href="#" class="footer-link">Privacidade</a>
+      <a href="#" class="footer-link">Termos de Uso</a>
+      <a href="#" class="footer-link">Cookies</a>
+      <a href="#" class="footer-link">Segurança</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 ilumix. Todos os direitos reservados.</span>
+    <span>Feito no Brasil 🇧🇷</span>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); obs.unobserve(e.target); }});
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+  // How it works steps
+  function setStep(n) {
+    document.querySelectorAll('.how-step').forEach((s,i) => s.classList.toggle('is-active', i===n));
+  }
+  function setSceneRow(el) {
+    document.querySelectorAll('.scene-row').forEach(s => s.classList.remove('is-active'));
+    el.classList.add('is-active');
+  }
+
+  // Nav background on scroll
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').style.background = window.scrollY > 40 ? 'rgba(13,12,7,0.96)' : 'rgba(13,12,7,0.85)';
+  });
+</script>
+</body>
+</html>

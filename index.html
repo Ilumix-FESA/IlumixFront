@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#141209">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ilumix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div class="sidebar-overlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar__logo">
+    <svg class="sidebar__logo-icon" viewBox="0 0 32 32" fill="none">
+      <circle cx="16" cy="16" r="6" fill="#E2B84A" opacity=".92"/>
+      <circle cx="16" cy="16" r="10" stroke="#E2B84A" stroke-width="1" opacity=".35"/>
+      <circle cx="16" cy="16" r="14" stroke="#E2B84A" stroke-width=".5" opacity=".12"/>
+      <line x1="16" y1="2"  x2="16" y2="6"  stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+      <line x1="16" y1="26" x2="16" y2="30" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+      <line x1="2"  y1="16" x2="6"  y2="16" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+      <line x1="26" y1="16" x2="30" y2="16" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+    </svg>
+    <div>
+      <div class="sidebar__logo-wordmark">ilu<b>mix</b></div>
+      <div class="sidebar__logo-sub">Smart Lighting</div>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group__label">Painel</div>
+    <div class="nav-item is-active" data-nav="dashboard">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Visão Geral
+    </div>
+    <div class="nav-item" data-nav="rooms">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Cômodos
+    </div>
+    <div class="nav-item" data-nav="scenes">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Cenas
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group__label">Automação</div>
+    <div class="nav-item" data-nav="schedule">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Horários
+    </div>
+    <div class="nav-item" data-nav="commands">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 1a3 3 0 013 3v8a3 3 0 01-6 0V4a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+      Comandos de Voz
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group__label">Sistema</div>
+    <div class="nav-item" data-nav="wifi">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      Wi-Fi & Devices
+    </div>
+    <div class="nav-item" data-nav="energy">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Energia
+    </div>
+  </div>
+
+  <div class="sidebar__footer">
+    <div class="nav-item">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Conta
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:var(--sp-3)">
+      <button class="btn btn--icon btn-menu">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar__left">
+        <div class="topbar__title" id="greeting">Boa noite, Casa</div>
+        <div class="topbar__sub" id="topbar-sub"></div>
+      </div>
+    </div>
+    <div class="topbar__actions">
+      <button class="btn btn--icon" style="position:relative">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <div class="notif-dot"></div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═════ DASHBOARD ═════ -->
+  <div class="page" id="page-dashboard">
+    <div class="page-inner">
+      <div class="g4 mb-4">
+        <div class="card">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Luzes Ativas</div>
+          <div class="stat-val"><b id="stat-lights">—</b></div>
+          <div class="stat-delta"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>+2 desde ontem</div>
+        </div>
+        <div class="card">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Consumo</div>
+          <div class="stat-val"><b id="stat-power">—</b></div>
+          <div class="stat-delta down"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>−18% vs ontem</div>
+        </div>
+        <div class="card">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Economia</div>
+          <div class="stat-val">R$<b>31</b></div>
+          <div class="stat-delta"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>Meta atingida</div>
+        </div>
+        <div class="card">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Cena Ativa</div>
+          <div style="display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-2)">
+            <span style="color:var(--amber)" id="stat-scene-icon"></span>
+            <span style="font-size:13px;font-weight:500" id="stat-scene-name">—</span>
+          </div>
+          <div style="margin-top:4px"><span class="badge badge--on">ativa</span></div>
+        </div>
+      </div>
+
+      <div class="sec-hdr mb-3">
+        <div class="sec-hdr__title">Cômodos</div>
+        <div class="sec-hdr__action" data-nav="rooms">Ver todos</div>
+      </div>
+      <div class="g3 mb-6" id="dash-rooms"></div>
+
+      <div class="sec-hdr mb-3">
+        <div class="sec-hdr__title">Cenas Rápidas</div>
+        <div class="sec-hdr__action" data-nav="scenes">Editar</div>
+      </div>
+      <div class="g4" id="dash-scenes"></div>
+    </div>
+  </div>
+
+  <!-- ═════ ROOMS ═════ -->
+  <div class="page" id="page-rooms">
+    <div class="page-inner">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4)">
+        <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Controle de Cômodos</div>
+        <div style="display:flex;gap:var(--sp-2)">
+          <button class="btn btn--party btn--sm" id="btn-party">Modo festa</button>
+        </div>
+      </div>
+      <div class="g-rooms">
+        <!-- Col 1: rooms -->
+        <div>
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid);margin-bottom:var(--sp-3)">Cômodos</div>
+          <div id="room-list"></div>
+        </div>
+        <!-- Col 2: bulbs -->
+        <div>
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid);margin-bottom:var(--sp-3)" id="bulb-list-title">Lâmpadas</div>
+          <div id="bulb-list"></div>
+        </div>
+        <!-- Col 3: detail -->
+        <div class="rooms-detail" id="rooms-detail-col">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid);margin-bottom:var(--sp-3)">Controles</div>
+          <div class="card card--panel" id="bulb-detail" style="min-height:200px">
+            <div style="color:var(--text-lo);font-size:12px">Selecione uma lâmpada</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ SCENES ═════ -->
+  <div class="page" id="page-scenes">
+    <div class="page-inner">
+      <div class="sec-hdr mb-4">
+        <div class="sec-hdr__title">Cenas de Luz</div>
+      </div>
+      <div class="g3" id="scenes-grid"></div>
+    </div>
+  </div>
+
+  <!-- ═════ SCHEDULE ═════ -->
+  <div class="page" id="page-schedule">
+    <div class="page-inner">
+      <div class="sec-hdr mb-4">
+        <div class="sec-hdr__title">Rotinas Automáticas</div>
+      </div>
+      <div id="sched-list"></div>
+    </div>
+  </div>
+
+  <!-- ═════ COMMANDS ═════ -->
+  <div class="page" id="page-commands">
+    <div class="page-inner">
+      <div class="g2">
+        <div>
+          <div class="sec-hdr mb-3"><div class="sec-hdr__title">Comandos de Voz</div></div>
+          <div id="vc-list"></div>
+        </div>
+        <div>
+          <div class="sec-hdr mb-3"><div class="sec-hdr__title">Atalhos Rápidos</div></div>
+          <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-bottom:var(--sp-5)" id="quick-chips"></div>
+          <div class="sec-hdr mb-3"><div class="sec-hdr__title">Histórico</div></div>
+          <div id="cmd-history"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ WIFI ═════ -->
+  <div class="page" id="page-wifi">
+    <div class="page-inner">
+      <div class="g2">
+        <div>
+          <div class="sec-hdr mb-3"><div class="sec-hdr__title">Rede Conectada</div></div>
+          <div class="card card--panel mb-4" id="wifi-network-info"></div>
+          <div class="sec-hdr mb-3">
+            <div class="sec-hdr__title">Dispositivos</div>
+            <button class="btn btn--ghost btn--sm" id="btn-scan">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+              Escanear
+            </button>
+          </div>
+          <div id="wifi-devices"></div>
+        </div>
+        <div>
+          <div class="sec-hdr mb-3"><div class="sec-hdr__title">Adicionar Lâmpada</div></div>
+          <div class="card card--panel">
+            <div style="text-align:center;padding:var(--sp-4) 0">
+              <div style="width:56px;height:56px;background:var(--amber-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-3);color:var(--amber)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21h6m-6-3h6m-3-15a7 7 0 017 7c0 2.5-1.3 4.7-3 6H8c-1.7-1.3-3-3.5-3-6a7 7 0 017-7z"/></svg>
+              </div>
+              <div style="font-size:14px;font-weight:600;margin-bottom:var(--sp-2)">Parear Nova Lâmpada</div>
+              <div style="font-size:12px;color:var(--text-mid);margin-bottom:var(--sp-4)">Ligue a lâmpada e ela aparecerá automaticamente, ou adicione manualmente via IP.</div>
+            </div>
+            <div class="input-wrap"><label>Nome da Lâmpada</label><input class="input" id="nw-name" placeholder="Ex: Spot Teto"></div>
+            <div class="input-wrap"><label>Cômodo</label>
+              <select class="input" id="nw-room">
+                ${['sala','quarto','escritorio','cozinha','banheiro','garagem'].map(id=>`<option value="${id}">${{sala:'Sala',quarto:'Quarto',escritorio:'Escritório',cozinha:'Cozinha',banheiro:'Banheiro',garagem:'Garagem'}[id]}</option>`).join('')}
+              </select>
+            </div>
+            <div class="input-wrap"><label>IP (se conhecido)</label><input class="input" id="nw-ip" placeholder="192.168.1.xxx"></div>
+            <button class="btn btn--primary btn--full" id="btn-add-wifi-bulb">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Adicionar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════ ENERGY ═════ -->
+  <div class="page" id="page-energy">
+    <div class="page-inner">
+      <div class="g2 mb-4">
+        <div class="card" id="savings-breakdown"></div>
+        <div>
+          <div class="card mb-4">
+            <div class="sec-hdr mb-3">
+              <div class="sec-hdr__title">Consumo por Hora</div>
+              <div class="tabs" id="energy-tabs">
+                <button class="tab is-active">Dia</button>
+                <button class="tab">Semana</button>
+                <button class="tab">Mês</button>
+              </div>
+            </div>
+            <div id="energy-chart"></div>
+          </div>
+          <div class="card">
+            <div class="sec-hdr mb-3"><div class="sec-hdr__title">Por Cômodo</div></div>
+            <div id="room-energy"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MOBILE BOTTOM NAV -->
+<nav class="mobile-nav">
+  <div class="mobile-nav__items">
+    <div class="mobile-nav__item is-active" data-nav="dashboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Painel
+    </div>
+    <div class="mobile-nav__item" data-nav="rooms">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Cômodos
+    </div>
+    <div class="mobile-nav__item" data-nav="scenes">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+      Cenas
+    </div>
+    <div class="mobile-nav__item" data-nav="commands">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 1a3 3 0 013 3v8a3 3 0 01-6 0V4a3 3 0 013-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+      Voz
+    </div>
+    <div class="mobile-nav__item" data-nav="wifi">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+      Wi-Fi
+    </div>
+  </div>
+</nav>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- SCRIPTS -->
+<script src="js/data.js"></script>
+<script src="js/router.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/pages/dashboard.js"></script>
+<script src="js/pages/rooms.js"></script>
+<script src="js/pages/scenes.js"></script>
+<script src="js/pages/schedule.js"></script>
+<script src="js/pages/commands.js"></script>
+<script src="js/pages/energy.js"></script>
+<script src="js/pages/wifi.js"></script>
+<script src="js/main.js"></script>
+
+<script>
+  // Bind wifi add button after DOM loads
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-add-wifi-bulb')?.addEventListener('click', () => {
+      const name   = document.getElementById('nw-name').value.trim();
+      const roomId = document.getElementById('nw-room').value;
+      const ip     = document.getElementById('nw-ip').value.trim() || null;
+      if (!name) return toast('Informe o nome da lâmpada');
+      Data.addBulb(roomId, name, { ip, status: ip ? 'online' : 'offline', rssi: ip ? -62 : null });
+      document.getElementById('nw-name').value = '';
+      document.getElementById('nw-ip').value   = '';
+      toast('Lâmpada adicionada!');
+      WifiPage.render();
+    });
+
+    document.getElementById('btn-scan')?.addEventListener('click', btn => {
+      toast('Escaneando rede...');
+    });
+  });
+</script>
+
+</body>
+</html>

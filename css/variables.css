@@ -1,0 +1,56 @@
+:root {
+  --amber:       #E2B84A;
+  --amber-warm:  #D4A832;
+  --amber-deep:  #C49020;
+  --amber-soft:  #EDD070;
+  --amber-dim:   rgba(226,184,74,0.12);
+  --amber-glow:  rgba(226,184,74,0.35);
+
+  --linen:       #F0E8D0;
+  --linen-dim:   rgba(240,232,208,0.55);
+
+  --dark-0:  #0D0C07;
+  --dark-1:  #141209;
+  --dark-2:  #1C1A10;
+  --dark-3:  #232115;
+  --dark-4:  #2E2C1C;
+  --dark-5:  #3A3822;
+
+  --text-hi:    #F0E8D0;
+  --text-mid:   #948E76;
+  --text-lo:    #524E38;
+
+  --green:     #5BAD6A;
+  --green-dim: rgba(91,173,106,0.14);
+  --red:       #B56060;
+  --red-dim:   rgba(181,96,96,0.14);
+  --blue:      #5B9FD4;
+  --purple:    #8B72D4;
+
+  --border:        rgba(226,184,74,0.08);
+  --border-hover:  rgba(226,184,74,0.20);
+  --border-active: rgba(226,184,74,0.38);
+
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   14px;
+  --r-xl:   18px;
+  --r-full: 999px;
+
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+
+  --font: 'Sora', system-ui, sans-serif;
+
+  --sidebar-w: 220px;
+  --topnav-h:  56px;
+
+  --ease: 0.18s ease;
+  --ease-slow: 0.38s ease;
+}

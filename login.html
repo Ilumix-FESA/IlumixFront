@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0D0C07">
+  <title>Entrar — ilumix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --amber:      #E2B84A;
+      --amber-warm: #D4A832;
+      --amber-deep: #C49020;
+      --amber-soft: #EDD070;
+      --amber-dim:  rgba(226,184,74,0.10);
+      --amber-glow: rgba(226,184,74,0.30);
+      --linen:      #F0E8D0;
+      --dark-0:     #0D0C07;
+      --dark-1:     #141209;
+      --dark-2:     #1C1A10;
+      --dark-3:     #232115;
+      --dark-4:     #2E2C1C;
+      --dark-5:     #3A3822;
+      --text-hi:    #F0E8D0;
+      --text-mid:   #948E76;
+      --text-lo:    #524E38;
+      --border:     rgba(226,184,74,0.08);
+      --border-h:   rgba(226,184,74,0.22);
+      --border-act: rgba(226,184,74,0.40);
+      --red:        #B56060;
+      --green:      #5BAD6A;
+      --font: 'Sora', system-ui, sans-serif;
+      --ease: 0.18s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    html, body { height: 100%; }
+    body { font-family: var(--font); background: var(--dark-0); color: var(--text-hi); display: flex; min-height: 100vh; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    /* ── LEFT PANEL ── */
+    .panel-left {
+      width: 52%;
+      background: var(--dark-1);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 40px 48px;
+      position: relative; overflow: hidden;
+    }
+    .panel-bg {
+      position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse 70% 60% at 30% 60%, rgba(226,184,74,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 80% 20%, rgba(226,184,74,0.03) 0%, transparent 60%);
+    }
+    .panel-grid {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image: linear-gradient(rgba(226,184,74,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(226,184,74,0.025) 1px, transparent 1px);
+      background-size: 50px 50px;
+      mask-image: radial-gradient(ellipse 80% 80% at 30% 60%, black 20%, transparent 80%);
+    }
+
+    .panel-logo { display:flex; align-items:center; gap:12px; margin-bottom:auto; position:relative; z-index:1; }
+    .panel-logo a { display:flex; align-items:center; gap:12px; text-decoration:none; }
+    .panel-logo svg { width:30px; height:30px; }
+    .panel-logo-text { font-size:17px; font-weight:300; color:var(--text-hi); }
+    .panel-logo-text b { font-weight:600; color:var(--amber); }
+
+    .panel-content { flex:1; display:flex; flex-direction:column; justify-content:center; padding:60px 0; position:relative; z-index:1; }
+    .panel-eyebrow { font-size:10px; font-weight:500; letter-spacing:2.5px; text-transform:uppercase; color:var(--amber); margin-bottom:20px; }
+    .panel-h1 { font-size: clamp(28px, 3.5vw, 48px); font-weight:200; letter-spacing:-1px; line-height:1.1; color:var(--text-hi); margin-bottom:20px; }
+    .panel-h1 b { font-weight:600; }
+    .panel-body { font-size:14px; font-weight:300; color:var(--text-mid); line-height:1.8; max-width:360px; margin-bottom:40px; }
+
+    .features-list { display:flex; flex-direction:column; gap:16px; }
+    .feat-item { display:flex; align-items:flex-start; gap:14px; }
+    .feat-item-icon { width:36px; height:36px; background:var(--amber-dim); border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--amber); }
+    .feat-item-icon svg { width:16px; height:16px; }
+    .feat-item-title { font-size:13px; font-weight:500; color:var(--text-hi); margin-bottom:2px; }
+    .feat-item-body  { font-size:12px; font-weight:300; color:var(--text-mid); }
+
+    .panel-orb { position:absolute; bottom:-80px; right:-80px; width:320px; height:320px; border-radius:50%; background:radial-gradient(circle at 38% 33%, rgba(226,184,74,0.1), rgba(196,144,32,0.03) 60%, transparent 100%); pointer-events:none; }
+
+    /* ── RIGHT PANEL (form) ── */
+    .panel-right {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 48px;
+      background: var(--dark-0);
+    }
+    .form-wrap { width: 100%; max-width: 400px; }
+    .form-header { margin-bottom: 36px; }
+    .form-title { font-size: 24px; font-weight: 300; color: var(--text-hi); letter-spacing: -0.5px; margin-bottom: 6px; }
+    .form-title b { font-weight: 600; }
+    .form-sub { font-size: 13px; font-weight: 300; color: var(--text-mid); }
+    .form-sub a { color: var(--amber); }
+
+    /* Form fields */
+    .field { margin-bottom: 18px; }
+    .field label { display:block; font-size:11px; font-weight:500; letter-spacing:0.8px; color:var(--text-mid); margin-bottom:8px; text-transform:uppercase; }
+    .field-input-wrap { position: relative; }
+    .field input {
+      width:100%; background:var(--dark-2); border:1px solid var(--border);
+      border-radius:8px; padding:12px 44px 12px 14px;
+      color:var(--text-hi); font-size:14px; font-family:var(--font);
+      transition:border-color var(--ease), background var(--ease);
+    }
+    .field input::placeholder { color:var(--text-lo); }
+    .field input:focus { border-color:var(--border-act); background:var(--dark-3); outline:none; }
+    .field input.is-error { border-color:var(--red); }
+    .field-icon { position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--text-lo); pointer-events:none; }
+    .field-icon svg { width:16px; height:16px; }
+    .field-eye { pointer-events:all; cursor:pointer; transition:color var(--ease); }
+    .field-eye:hover { color:var(--text-mid); }
+    .field-error { font-size:11px; color:var(--red); margin-top:5px; display:none; }
+    .field-error.is-visible { display:block; }
+
+    .forgot { text-align:right; margin-top:-8px; margin-bottom:18px; }
+    .forgot a { font-size:12px; color:var(--text-mid); transition:color var(--ease); }
+    .forgot a:hover { color:var(--amber); }
+
+    .btn-submit {
+      width:100%; padding:13px; background:var(--amber); border:none; border-radius:8px;
+      font-size:14px; font-weight:600; color:var(--dark-0); cursor:pointer;
+      font-family:var(--font); transition:all var(--ease);
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      margin-bottom:20px;
+    }
+    .btn-submit:hover { background:var(--amber-soft); transform:translateY(-1px); box-shadow:0 6px 24px rgba(226,184,74,0.2); }
+    .btn-submit:active { transform:translateY(0); }
+    .btn-submit.is-loading { opacity:0.7; cursor:not-allowed; }
+
+    .divider-text { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+    .divider-text::before, .divider-text::after { content:''; flex:1; height:1px; background:var(--border); }
+    .divider-text span { font-size:11px; color:var(--text-lo); white-space:nowrap; }
+
+    .btn-social {
+      width:100%; padding:11px; background:var(--dark-2); border:1px solid var(--border);
+      border-radius:8px; font-size:13px; font-weight:400; color:var(--text-mid);
+      cursor:pointer; font-family:var(--font); transition:all var(--ease);
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      margin-bottom:10px;
+    }
+    .btn-social:hover { border-color:var(--border-h); color:var(--text-hi); }
+
+    .form-footer { text-align:center; font-size:13px; color:var(--text-mid); margin-top:24px; }
+    .form-footer a { color:var(--amber); font-weight:500; }
+
+    /* Spinner */
+    .spinner { width:16px; height:16px; border:2px solid rgba(13,12,7,0.3); border-top-color:var(--dark-0); border-radius:50%; animation:spin 0.7s linear infinite; flex-shrink:0; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Success state */
+    .success-msg { display:none; text-align:center; padding:32px 0; }
+    .success-msg.is-visible { display:block; }
+    .success-icon { width:64px;height:64px;border-radius:50%;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:var(--amber); }
+    .success-icon svg { width:28px;height:28px; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:900px) {
+      .panel-left { display:none; }
+      .panel-right { padding:32px 24px; }
+    }
+    @media(max-width:480px) {
+      .panel-right { padding:24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LEFT PANEL -->
+<div class="panel-left">
+  <div class="panel-bg"></div>
+  <div class="panel-grid"></div>
+  <div class="panel-orb"></div>
+
+  <div class="panel-logo">
+    <a href="landing.html">
+      <svg viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="6" fill="#E2B84A" opacity=".92"/>
+        <circle cx="16" cy="16" r="10" stroke="#E2B84A" stroke-width="1" opacity=".35"/>
+        <circle cx="16" cy="16" r="14" stroke="#E2B84A" stroke-width=".5" opacity=".12"/>
+        <line x1="16" y1="2"  x2="16" y2="6"  stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+        <line x1="16" y1="26" x2="16" y2="30" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+        <line x1="2"  y1="16" x2="6"  y2="16" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+        <line x1="26" y1="16" x2="30" y2="16" stroke="#E2B84A" stroke-width="1.3" opacity=".55"/>
+      </svg>
+      <div class="panel-logo-text">ilu<b>mix</b></div>
+    </a>
+  </div>
+
+  <div class="panel-content">
+    <div class="panel-eyebrow">Smart Lighting Ecosystem</div>
+    <h1 class="panel-h1">Bem-vindo<br>de <b>volta.</b></h1>
+    <p class="panel-body">Suas lâmpadas estão esperando. Entre na plataforma e retome o controle completo da iluminação da sua casa.</p>
+    <div class="features-list">
+      <div class="feat-item">
+        <div class="feat-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21h6m-6-3h6m-3-15a7 7 0 017 7c0 2.5-1.3 4.7-3 6H8c-1.7-1.3-3-3.5-3-6a7 7 0 017-7z"/></svg></div>
+        <div><div class="feat-item-title">Controle total</div><div class="feat-item-body">Cada lâmpada na palma da mão, onde você estiver</div></div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        <div><div class="feat-item-title">Economia real</div><div class="feat-item-body">Relatórios de consumo em tempo real</div></div>
+      </div>
+      <div class="feat-item">
+        <div class="feat-item-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div><div class="feat-item-title">Automação</div><div class="feat-item-body">Rotinas que funcionam enquanto você descansa</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel-right">
+  <div class="form-wrap">
+
+    <!-- Success -->
+    <div class="success-msg" id="success-msg">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div style="font-size:22px;font-weight:300;color:var(--text-hi);margin-bottom:8px">Bem-vindo de volta!</div>
+      <div style="font-size:14px;color:var(--text-mid);margin-bottom:32px">Redirecionando para o painel...</div>
+      <div style="display:flex;justify-content:center"><div class="spinner" style="width:24px;height:24px;border-color:rgba(226,184,74,0.2);border-top-color:var(--amber)"></div></div>
+    </div>
+
+    <!-- Form -->
+    <div id="login-form-wrap">
+      <div class="form-header">
+        <div class="form-title"><b>Entrar</b> na sua conta</div>
+        <div class="form-sub">Não tem conta? <a href="cadastro.html">Criar gratuitamente</a></div>
+      </div>
+
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label>E-mail</label>
+          <div class="field-input-wrap">
+            <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+            <div class="field-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+          </div>
+          <div class="field-error" id="email-error">Informe um e-mail válido</div>
+        </div>
+
+        <div class="field">
+          <label>Senha</label>
+          <div class="field-input-wrap">
+            <input type="password" id="password" placeholder="Sua senha" autocomplete="current-password">
+            <div class="field-icon field-eye" id="toggle-pw">
+              <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+          <div class="field-error" id="pw-error">Informe sua senha</div>
+        </div>
+
+        <div class="forgot"><a href="#">Esqueceu a senha?</a></div>
+
+        <button type="submit" class="btn-submit" id="btn-login">
+          <span id="btn-login-text">Entrar</span>
+        </button>
+      </form>
+
+      <div class="divider-text"><span>ou continue com</span></div>
+
+      <button class="btn-social">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continuar com Google
+      </button>
+
+      <div class="form-footer">
+        Ao entrar, você concorda com os <a href="#">Termos de Uso</a> e <a href="#">Privacidade</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Toggle password visibility
+  let pwVisible = false;
+  document.getElementById('toggle-pw').addEventListener('click', () => {
+    pwVisible = !pwVisible;
+    const inp = document.getElementById('password');
+    inp.type = pwVisible ? 'text' : 'password';
+    document.getElementById('eye-icon').innerHTML = pwVisible
+      ? `<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`
+      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+  });
+
+  // Form submit
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    let valid = true;
+    const email = document.getElementById('email').value.trim();
+    const pw    = document.getElementById('password').value;
+
+    // Validate
+    const emailErr = document.getElementById('email-error');
+    const pwErr    = document.getElementById('pw-error');
+    emailErr.classList.remove('is-visible'); document.getElementById('email').classList.remove('is-error');
+    pwErr.classList.remove('is-visible');    document.getElementById('password').classList.remove('is-error');
+
+    if (!email || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+      emailErr.classList.add('is-visible'); document.getElementById('email').classList.add('is-error'); valid = false;
+    }
+    if (!pw) {
+      pwErr.classList.add('is-visible'); document.getElementById('password').classList.add('is-error'); valid = false;
+    }
+    if (!valid) return;
+
+    // Loading state
+    const btn = document.getElementById('btn-login');
+    btn.classList.add('is-loading');
+    btn.innerHTML = `<div class="spinner"></div><span>Entrando...</span>`;
+
+    // Simulate auth (replace with real API call)
+    await new Promise(r => setTimeout(r, 1500));
+
+    // Show success
+    document.getElementById('login-form-wrap').style.display = 'none';
+    document.getElementById('success-msg').classList.add('is-visible');
+
+    // Redirect
+    setTimeout(() => { window.location.href = 'index.html'; }, 1800);
+  });
+</script>
+</body>
+</html>
