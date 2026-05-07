@@ -1,197 +1,177 @@
 /* ============================================================
-   ILUMIX — API Service Layer v2
-   Troque API_BASE_URL pela URL de produção (Railway/Render).
+   ILUMIX — API Service Layer v3
+   Contrato exato com o backend documentado em cada método.
    ============================================================ */
-
-const API_BASE_URL = 'http://localhost:5145'; // ← troque para produção
+const API_BASE_URL = 'http://localhost:5145'; // troque pela URL de produção
 
 const Api = (() => {
 
   /* ── Token helpers ───────────────────────────────────────── */
-  function getToken()        { return localStorage.getItem('ilumix_token'); }
-  function getRefreshToken() { return localStorage.getItem('ilumix_refresh'); }
-  function saveTokens(a, r)  {
+  const getToken        = () => localStorage.getItem('ilumix_token');
+  const getRefreshToken = () => localStorage.getItem('ilumix_refresh');
+  const saveTokens = (a, r) => {
     localStorage.setItem('ilumix_token', a);
     if (r) localStorage.setItem('ilumix_refresh', r);
-  }
-  function clearTokens() {
+  };
+  const clearTokens = () =>
     ['ilumix_token','ilumix_refresh','ilumix_user'].forEach(k => localStorage.removeItem(k));
-  }
-  function requireAuth() {
-    if (!getToken()) { window.location.href = 'login.html'; return false; }
-    return true;
-  }
-  function getUser()      { try { return JSON.parse(localStorage.getItem('ilumix_user')||'null'); } catch { return null; } }
-  function saveUser(u)    { localStorage.setItem('ilumix_user', JSON.stringify(u)); }
 
-  /* ── Base fetch + auto-refresh ───────────────────────────── */
-  async function request(path, options = {}, retry = true) {
+  const requireAuth = () => { if (!getToken()) { window.location.href='login.html'; return false; } return true; };
+  const getUser  = () => { try { return JSON.parse(localStorage.getItem('ilumix_user')||'null'); } catch { return null; } };
+  const saveUser = u => localStorage.setItem('ilumix_user', JSON.stringify(u));
+
+  /* ── Fetch base ──────────────────────────────────────────── */
+  async function request(path, opts={}, retry=true) {
     const token = getToken();
     const headers = {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
+      ...(opts.headers||{}),
     };
-    const res = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
-
+    const res = await fetch(`${API_BASE_URL}${path}`, {...opts, headers});
     if (res.status === 401 && retry) {
-      const ok = await tryRefresh();
-      if (ok) return request(path, options, false);
-      clearTokens();
-      window.location.href = 'login.html';
-      return null;
+      if (await tryRefresh()) return request(path, opts, false);
+      clearTokens(); window.location.href='login.html'; return null;
     }
     return res;
   }
 
   async function tryRefresh() {
-    const rt = getRefreshToken();
-    if (!rt) return false;
+    const rt = getRefreshToken(); if (!rt) return false;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rt),
-      });
+      const res = await fetch(`${API_BASE_URL}/api/auth/refresh`,
+        { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rt) });
       if (!res.ok) return false;
-      const data = await res.json();
-      saveTokens(data.accessToken, data.refreshToken);
-      return true;
+      const d = await res.json(); saveTokens(d.accessToken, d.refreshToken); return true;
     } catch { return false; }
   }
 
   /* ── JSON helpers ────────────────────────────────────────── */
-  async function getJson(path) {
-    const res = await request(path);
-    if (!res || !res.ok) throw new Error(`Erro ${res?.status} em GET ${path}`);
+  async function _json(res) {
+    const ct = res.headers.get('content-type')||'';
+    if (!ct.includes('application/json')) return {};
     return res.json();
   }
-  async function postJson(path, body) {
-    const res = await request(path, { method: 'POST', body: JSON.stringify(body) });
-    if (!res || !res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || `Erro ${res?.status}`); }
-    return res.json();
+  async function call(path, opts={}) {
+    const res = await request(path, opts);
+    if (!res) throw new Error('Sem resposta da API');
+    if (!res.ok) { const e = await _json(res); throw new Error(e.message || `Erro ${res.status}`); }
+    return _json(res);
   }
-  async function putJson(path, body) {
-    const res = await request(path, { method: 'PUT', body: JSON.stringify(body) });
-    if (!res || !res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || `Erro ${res?.status}`); }
-    return res.json();
-  }
-  async function patchJson(path, body) {
-    const res = await request(path, { method: 'PATCH', body: JSON.stringify(body) });
-    if (!res || !res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || `Erro ${res?.status}`); }
-    return res.json();
-  }
-  async function deleteReq(path) {
-    const res = await request(path, { method: 'DELETE' });
-    if (!res || !res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.message || `Erro ${res?.status}`); }
-    return res.json();
-  }
+  const GET    = p        => call(p);
+  const POST   = (p,b)   => call(p, { method:'POST',   body: JSON.stringify(b??{}) });
+  const PUT    = (p,b)   => call(p, { method:'PUT',    body: JSON.stringify(b)     });
+  const PATCH  = (p,b)   => call(p, { method:'PATCH',  body: JSON.stringify(b)     });
+  const DELETE = p        => call(p, { method:'DELETE'                              });
 
   /* ══════════════════════════════════════════════════════════
      AUTH
+     POST /api/auth/login  → { accessToken, refreshToken, user:{Id,Name,Email} }
+     POST /api/user/register → { message }
   ══════════════════════════════════════════════════════════ */
   const auth = {
     async login(email, password) {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Email ou senha inválidos.');
-      saveTokens(data.accessToken, data.refreshToken);
-      saveUser(data.user);
-      return data;
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`,
+        { method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({email,password}) });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.message||'Email ou senha inválidos.');
+      saveTokens(d.accessToken, d.refreshToken);
+      // backend retorna user.Id (maiúsculo) — normalizamos
+      const u = { id: d.user.Id||d.user.id, name: d.user.Name||d.user.name, email: d.user.Email||d.user.email };
+      saveUser(u); return d;
     },
-
     async register(name, email, password, confirmPassword) {
-      const res = await fetch(`${API_BASE_URL}/api/user/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password, confirmPassword }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Erro ao criar conta.');
-      return data;
+      const res = await fetch(`${API_BASE_URL}/api/user/register`,
+        { method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({name,email,password,confirmPassword}) });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.message||'Erro ao criar conta.');
+      return d;
     },
-
-    logout() { clearTokens(); window.location.href = 'login.html'; },
-    isLoggedIn() { return !!getToken(); },
+    logout() { clearTokens(); window.location.href='login.html'; },
+    isLoggedIn: () => !!getToken(),
     getUser,
   };
 
   /* ══════════════════════════════════════════════════════════
-     LÂMPADAS  /api/lamp
+     LÂMPADAS
+     GET    /api/lamp              → [LampModel]
+     GET    /api/lamp/{id}         → LampModel
+     GET    /api/lamp/{id}/status  → { lampId, name, attributes:{Name:Value} }
+     POST   /api/lamp              → { message, lamp: LampModel }
+       LampModel.Commands = [{CommandId, Name, AttributeRef}]
+       LampModel.Attributes = [{AttributeId, Name, Type, Value}]
+     PUT    /api/lamp/{id}/configure → body: {Name, LocationId, Ico}
+     PATCH  /api/lamp/{id}/command  → body: {commandId:"commandName", value:"value"}
+       OBS: commandId aqui é o NOME do comando, não o GUID
+     DELETE /api/lamp/{id}
   ══════════════════════════════════════════════════════════ */
   const lamps = {
-    getAll()                    { return getJson('/api/lamp'); },
-    getById(id)                 { return getJson(`/api/lamp/${id}`); },
-    getStatus(id)               { return getJson(`/api/lamp/${id}/status`); },
-    create()                    { return postJson('/api/lamp', {}); },
-    configure(id, name, locationId, ico) {
-      return putJson(`/api/lamp/${id}/configure`, { name, locationId, ico });
-    },
-    // commandName = nome do comando (ex: 'on', 'off', 'setBrightness')
-    command(id, commandName, value) {
-      return patchJson(`/api/lamp/${id}/command`, { CommandId: commandName, Value: value });
-    },
-    delete(id) { return deleteReq(`/api/lamp/${id}`); },
+    getAll:     ()              => GET(`/api/lamp`),
+    getById:    id              => GET(`/api/lamp/${id}`),
+    getStatus:  id              => GET(`/api/lamp/${id}/status`),
+    create:     (deviceId)      => POST(`/api/lamp`, deviceId ? {deviceId} : {}),
+    configure:  (id,name,locationId,ico) =>
+                                   PUT(`/api/lamp/${id}/configure`, {name,locationId:locationId||'',ico:ico||''}),
+    // commandName = Name do comando (ex: "on", "setBrightness", "setColor")
+    // Cor: pode enviar hex (#FF0000) — o backend converte para "255,0,0" para o ESP32
+    command:    (id,commandName,value) =>
+                                   PATCH(`/api/lamp/${id}/command`, {commandId:commandName, value:String(value)}),
+    delete:     id              => DELETE(`/api/lamp/${id}`),
   };
 
   /* ══════════════════════════════════════════════════════════
-     LOCALIZAÇÕES  /api/location
+     LOCALIZAÇÕES (CÔMODOS)
+     GET    /api/location         → [LocationModel]
+     GET    /api/location/{id}    → LocationModel
+     POST   /api/location         → body:{Name,Ico} → {message,location:LocationModel}
+     PUT    /api/location/{id}    → body:{Id,Name,Ico}
+     DELETE /api/location/{id}
   ══════════════════════════════════════════════════════════ */
   const locations = {
-    getAll()              { return getJson('/api/location'); },
-    getById(id)           { return getJson(`/api/location/${id}`); },
-    create(name, ico='')  { return postJson('/api/location', { name, ico }); },
-    update(id, name, ico) { return putJson(`/api/location/${id}`, { name, ico: ico||'' }); },
-    delete(id)            { return deleteReq(`/api/location/${id}`); },
+    getAll:  ()          => GET(`/api/location`),
+    getById: id          => GET(`/api/location/${id}`),
+    create:  (name,ico)  => POST(`/api/location`, {name,ico:ico||''}),
+    update:  (id,name,ico) => PUT(`/api/location/${id}`, {id,name,ico:ico||''}),
+    delete:  id          => DELETE(`/api/location/${id}`),
   };
 
   /* ══════════════════════════════════════════════════════════
-     CENAS  /api/scene
+     CENAS
+     GET    /api/scene         → [SceneModel]
+     GET    /api/scene/{id}    → SceneModel
+     POST   /api/scene         → body:{Name,Description,Ico,Brightness,Temp,Color}
+     PUT    /api/scene/{id}    → body:{Name,Description,Ico,Brightness,Temp,Color}
+     POST   /api/scene/{id}/activate
+     DELETE /api/scene/{id}
   ══════════════════════════════════════════════════════════ */
   const scenes = {
-    getAll()   { return getJson('/api/scene'); },
-    getById(id){ return getJson(`/api/scene/${id}`); },
-    create(data) {
-      return postJson('/api/scene', {
-        name:        data.name,
-        description: data.desc || '',
-        ico:         data.ico  || data.icon || '',
-        brightness:  data.brightness || 80,
-        temp:        data.temp  || '2700K',
-        color:       data.color || '#E2B84A',
-      });
-    },
-    update(id, data) {
-      return putJson(`/api/scene/${id}`, {
-        name:        data.name,
-        description: data.desc || '',
-        ico:         data.ico  || data.icon || '',
-        brightness:  data.brightness || 80,
-        temp:        data.temp  || '2700K',
-        color:       data.color || '#E2B84A',
-      });
-    },
-    activate(id) { return postJson(`/api/scene/${id}/activate`, {}); },
-    delete(id)   { return deleteReq(`/api/scene/${id}`); },
+    getAll:   ()       => GET(`/api/scene`),
+    getById:  id       => GET(`/api/scene/${id}`),
+    create:  (d)       => POST(`/api/scene`, {
+      name:d.name, description:d.description||'', ico:d.ico||'',
+      brightness:d.brightness||80, temp:d.temp||'2700K', color:d.color||'#E2B84A' }),
+    update:  (id,d)    => PUT(`/api/scene/${id}`, {
+      name:d.name, description:d.description||'', ico:d.ico||'',
+      brightness:d.brightness||80, temp:d.temp||'2700K', color:d.color||'#E2B84A' }),
+    activate: id       => POST(`/api/scene/${id}/activate`),
+    delete:   id       => DELETE(`/api/scene/${id}`),
   };
 
   /* ══════════════════════════════════════════════════════════
-     USUÁRIO  /api/user
+     USUÁRIO
+     POST /api/user/register
+     PUT  /api/user/{id}/update-email   → body:{newEmail}
+     PUT  /api/user/{id}/change-password → body:{currentPassword,newPassword,confirmNewPassword}
+     DELETE /api/user/{id}
   ══════════════════════════════════════════════════════════ */
   const user = {
-    updateEmail(id, newEmail) {
-      return putJson(`/api/user/${id}/update-email`, { newEmail });
-    },
-    changePassword(id, currentPassword, newPassword, confirmNewPassword) {
-      return putJson(`/api/user/${id}/change-password`, { currentPassword, newPassword, confirmNewPassword });
-    },
-    delete(id) { return deleteReq(`/api/user/${id}`); },
+    updateEmail:     (id,newEmail)                               => PUT(`/api/user/${id}/update-email`,    {newEmail}),
+    changePassword:  (id,currentPassword,newPassword,confirmNewPassword) =>
+                       PUT(`/api/user/${id}/change-password`, {currentPassword,newPassword,confirmNewPassword}),
+    delete:          id => DELETE(`/api/user/${id}`),
   };
 
-  /* Public */
-  return { auth, lamps, locations, scenes, user, requireAuth, getToken, getUser, saveUser, clearTokens };
+  return { auth, lamps, locations, scenes, user, requireAuth, getUser, saveUser, clearTokens };
 })();

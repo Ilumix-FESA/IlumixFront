@@ -1,11 +1,9 @@
 /* ============================================================
-   ILUMIX — Energy page
+   ILUMIX — Energy page — consumo real baseado nas lâmpadas
    ============================================================ */
 const EnergyPage = (() => {
 
-  function render() {
-    chart(); roomBars(); savings(); bindTabs();
-  }
+  function render() { chart(); roomBars(); savings(); bindTabs(); }
 
   function chart() {
     const el = document.getElementById('energy-chart');
@@ -26,11 +24,12 @@ const EnergyPage = (() => {
   function roomBars() {
     const el = document.getElementById('room-energy');
     if (!el) return;
-    const data = Data.rooms.map(r => {
-      const s = Data.roomStats(r.id);
-      return { name: r.name, w: s.power };
-    });
-    const max = Math.max(...data.map(d=>d.w), 1);
+    if (!Data.rooms.length) {
+      el.innerHTML = `<div style="color:var(--text-lo);font-size:12px">Adicione cômodos para ver o consumo.</div>`;
+      return;
+    }
+    const data = Data.rooms.map(r => { const s=Data.roomStats(r.id); return {name:r.name, w:s.power}; });
+    const max  = Math.max(...data.map(d=>d.w), 1);
     el.innerHTML = data.map(d=>`
       <div class="ebar">
         <div class="ebar__name">${d.name}</div>
@@ -42,36 +41,33 @@ const EnergyPage = (() => {
   function savings() {
     const el = document.getElementById('savings-breakdown');
     if (!el) return;
-    const rows = [
-      { label:'Automação',   pct:52, val:'R$ 16', color: 'var(--amber)' },
-      { label:'Horários',    pct:30, val:'R$ 9',  color: 'var(--green)' },
-      { label:'Modo festa',  pct:8,  val:'R$ 2',  color: 'var(--purple)' },
-      { label:'Sensors',     pct:10, val:'R$ 3',  color: 'var(--blue)' },
-    ];
+    const totalW  = Data.totalPower();
+    const totalKwh= (totalW * 24 / 1000).toFixed(1);
+    const custo   = (totalKwh * 30 * 0.80).toFixed(2); // R$0.80/kWh estimado
     el.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-3)">
         <div>
-          <div style="font-size:10px;color:var(--text-mid);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px">Economia Total no Mês</div>
-          <div style="font-size:32px;font-weight:300;color:var(--text-hi);letter-spacing:-1px">R$ <b style="font-weight:600">31</b></div>
+          <div style="font-size:10px;color:var(--text-mid);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px">Consumo atual</div>
+          <div style="font-size:32px;font-weight:300;color:var(--text-hi);letter-spacing:-1px">${totalW}<span style="font-size:14px;font-weight:400;color:var(--text-mid)"> W</span></div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:10px;color:var(--text-mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">vs mês anterior</div>
-          <div style="font-size:20px;color:var(--green);font-weight:600">−22%</div>
+          <div style="font-size:10px;color:var(--text-mid);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Custo est./mês</div>
+          <div style="font-size:20px;color:var(--amber);font-weight:600">R$ ${custo}</div>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--text-mid);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:var(--sp-3)">Origem da Economia</div>
-      ${rows.map(r=>`
-        <div class="savings-row">
-          <div class="savings-row__label">${r.label}</div>
-          <div class="savings-row__track">
-            <div class="savings-row__fill" style="width:${r.pct}%;background:${r.color}"></div>
-          </div>
-          <div class="savings-row__val">${r.val}</div>
-        </div>`).join('')}
       <div style="margin-top:var(--sp-4);padding:var(--sp-3);background:var(--dark-3);border-radius:var(--r-md);display:flex;gap:var(--sp-4)">
-        <div style="text-align:center;flex:1"><div style="font-size:18px;font-weight:300;color:var(--amber)">18 <span style="font-size:11px">kWh</span></div><div style="font-size:10px;color:var(--text-lo);margin-top:2px">Este mês</div></div>
-        <div style="text-align:center;flex:1"><div style="font-size:18px;font-weight:300;color:var(--green)">4.2 <span style="font-size:11px">kg</span></div><div style="font-size:10px;color:var(--text-lo);margin-top:2px">CO₂ evitado</div></div>
-        <div style="text-align:center;flex:1"><div style="font-size:18px;font-weight:300;color:var(--blue)">R$ 22</div><div style="font-size:10px;color:var(--text-lo);margin-top:2px">Custo est.</div></div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:18px;font-weight:300;color:var(--amber)">${totalKwh} <span style="font-size:11px">kWh</span></div>
+          <div style="font-size:10px;color:var(--text-lo);margin-top:2px">Estimativa/dia</div>
+        </div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:18px;font-weight:300;color:var(--green)">${Data.bulbs.length}</div>
+          <div style="font-size:10px;color:var(--text-lo);margin-top:2px">Lâmpadas</div>
+        </div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:18px;font-weight:300;color:var(--blue)">${Data.activeBulbs()}</div>
+          <div style="font-size:10px;color:var(--text-lo);margin-top:2px">Acesas agora</div>
+        </div>
       </div>`;
   }
 
