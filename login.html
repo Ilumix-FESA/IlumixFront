@@ -276,7 +276,14 @@
   </div>
 </div>
 
+  <script src="js/api.js"></script>
 <script>
+
+  // Se já estiver logado, redireciona direto para o app
+  if (localStorage.getItem('ilumix_token')) {
+    window.location.href = 'index.html';
+  }
+
   // Toggle password visibility
   let pwVisible = false;
   document.getElementById('toggle-pw').addEventListener('click', () => {
@@ -314,15 +321,19 @@
     btn.classList.add('is-loading');
     btn.innerHTML = `<div class="spinner"></div><span>Entrando...</span>`;
 
-    // Simulate auth (replace with real API call)
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Show success
-    document.getElementById('login-form-wrap').style.display = 'none';
-    document.getElementById('success-msg').classList.add('is-visible');
-
-    // Redirect
-    setTimeout(() => { window.location.href = 'index.html'; }, 1800);
+    // ── Chamada real à API ──────────────────────────────
+    try {
+      await Api.auth.login(email, pw);
+      document.getElementById('login-form-wrap').style.display = 'none';
+      document.getElementById('success-msg').classList.add('is-visible');
+      setTimeout(() => { window.location.href = 'index.html'; }, 1800);
+    } catch (err) {
+      btn.classList.remove('is-loading');
+      btn.innerHTML = '<span>Entrar</span>';
+      pwErr.textContent = err.message || 'Email ou senha inválidos.';
+      pwErr.classList.add('is-visible');
+      document.getElementById('password').classList.add('is-error');
+    }
   });
 </script>
 </body>

@@ -379,6 +379,7 @@
   </div>
 </div>
 
+  <script src="js/api.js"></script>
 <script>
   let currentStep = 1;
 
@@ -581,13 +582,36 @@
     sp.className = 'spinner';
     btn.insertBefore(sp, btn.firstChild);
 
-    // Simulate API
-    await new Promise(r => setTimeout(r, 2000));
+    // ── Chamada real à API de registro ──────────────────────
+    try {
+      const nome  = document.getElementById('f-nome').value.trim();
+      const email = document.getElementById('f-email').value.trim();
+      const pw    = document.getElementById('f-password').value;
+      const pw2   = document.getElementById('f-password2').value;
 
-    document.getElementById('form-body').style.display = 'none';
-    document.getElementById('success-screen').classList.add('is-visible');
+      await Api.auth.register(nome, email, pw, pw2);
 
-    setTimeout(() => { window.location.href = 'index.html'; }, 2500);
+      document.getElementById('form-body').style.display = 'none';
+      document.getElementById('success-screen').classList.add('is-visible');
+      setTimeout(() => { window.location.href = 'login.html'; }, 2500);
+    } catch (err) {
+      // Restaura botão e mostra erro
+      btn.classList.remove('is-loading');
+      document.getElementById('btn-step3-text').textContent = 'Criar conta';
+      const sp = btn.querySelector('.spinner');
+      if (sp) sp.remove();
+      btn.querySelector('svg').style.display = '';
+
+      // Mostra mensagem de erro no topo do step 3
+      let errEl = document.getElementById('api-error-msg');
+      if (!errEl) {
+        errEl = document.createElement('div');
+        errEl.id = 'api-error-msg';
+        errEl.style.cssText = 'color:#ff6b6b;font-size:13px;margin-bottom:12px;padding:10px;background:rgba(255,107,107,0.1);border-radius:8px;';
+        btn.parentElement.insertBefore(errEl, btn);
+      }
+      errEl.textContent = err.message || 'Erro ao criar conta. Tente novamente.';
+    }
   });
 </script>
 </body>

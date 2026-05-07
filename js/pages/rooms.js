@@ -1,5 +1,5 @@
 /* ============================================================
-   ILUMIX — Rooms page
+   ILUMIX — Rooms page — completo com await nas operações de API
    ============================================================ */
 const RoomsPage = (() => {
 
@@ -20,7 +20,6 @@ const RoomsPage = (() => {
     if (!el) return;
     el.innerHTML = Data.rooms.map(r => {
       const s = Data.roomStats(r.id);
-      const party = Data.isParty(r.id);
       return `<div class="room-card${s.active?' is-on':''}${r.id===selRoom?' is-selected-room':''}" data-room="${r.id}" style="margin-bottom:var(--sp-2);padding:var(--sp-3)">
         <div style="display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-2)">
           <div style="width:32px;height:32px;border-radius:var(--r-sm);background:${r.color}22;display:flex;align-items:center;justify-content:center;color:${r.color};flex-shrink:0">${roomIcon(r.icon,16)}</div>
@@ -31,7 +30,7 @@ const RoomsPage = (() => {
           </div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between">
-          <span class="badge ${s.active?'badge--on':'badge--off'}">${s.active?s.active+' ligadas':'desligado'}${party?' · festa':''}</span>
+          <span class="badge ${s.active?'badge--on':'badge--off'}">${s.active?s.active+' ligadas':'desligado'}</span>
           <div class="toggle ${s.active?'is-on':''} toggle-room" data-room="${r.id}"></div>
         </div>
       </div>`;
@@ -40,11 +39,8 @@ const RoomsPage = (() => {
     el.querySelectorAll('[data-room]').forEach(c => {
       c.addEventListener('click', e => {
         if (e.target.closest('button') || e.target.closest('.toggle')) return;
-        selRoom = c.dataset.room;
-        selBulb = null;
-        renderRoomList();
-        renderBulbList();
-        renderBulbDetail();
+        selRoom = c.dataset.room; selBulb = null;
+        renderRoomList(); renderBulbList(); renderBulbDetail();
       });
     });
     el.querySelectorAll('.toggle-room').forEach(t => {
@@ -58,11 +54,13 @@ const RoomsPage = (() => {
       b.addEventListener('click', e => { e.stopPropagation(); openEditRoom(b.dataset.room); });
     });
     el.querySelectorAll('.btn-del-room').forEach(b => {
-      b.addEventListener('click', e => {
+      b.addEventListener('click', async e => {
         e.stopPropagation();
         if (!confirm('Excluir cômodo e todas as lâmpadas?')) return;
-        if (selRoom === b.dataset.room) { selRoom = Data.rooms[0]?.id ?? null; selBulb = null; }
-        Data.deleteRoom(b.dataset.room);
+        b.disabled = true;
+        if (selRoom === b.dataset.room) { selRoom = Data.rooms.find(r=>r.id!==b.dataset.room)?.id ?? null; selBulb = null; }
+        await Data.deleteRoom(b.dataset.room);
+        toast('Cômodo excluído');
         render();
       });
     });
@@ -75,10 +73,8 @@ const RoomsPage = (() => {
     if (!el) return;
     const room = Data.rooms.find(r => r.id === selRoom);
     const rbl  = selRoom ? Data.getBulbs(selRoom) : [];
-
     document.getElementById('bulb-list-title').textContent = room ? room.name : 'Lâmpadas';
 
-    // Party btn
     const partyBtn = document.getElementById('btn-party');
     if (partyBtn) {
       const on = selRoom && Data.isParty(selRoom);
@@ -103,8 +99,7 @@ const RoomsPage = (() => {
     el.querySelectorAll('[data-bulb]').forEach(c => {
       c.addEventListener('click', e => {
         if (e.target.closest('button') || e.target.closest('.toggle')) return;
-        selBulb = c.dataset.bulb;
-        renderBulbList(); renderBulbDetail();
+        selBulb = c.dataset.bulb; renderBulbList(); renderBulbDetail();
       });
     });
     el.querySelectorAll('.toggle-bulb').forEach(t => {
@@ -115,17 +110,17 @@ const RoomsPage = (() => {
       });
     });
     el.querySelectorAll('.btn-del-bulb').forEach(b => {
-      b.addEventListener('click', e => {
+      b.addEventListener('click', async e => {
         e.stopPropagation();
         if (!confirm('Excluir esta lâmpada?')) return;
+        b.disabled = true;
         if (selBulb === b.dataset.bulb) selBulb = null;
-        Data.deleteBulb(b.dataset.bulb);
+        await Data.deleteBulb(b.dataset.bulb);
+        toast('Lâmpada excluída');
         renderBulbList(); renderBulbDetail();
       });
     });
     document.getElementById('btn-add-bulb')?.addEventListener('click', () => openAddBulb(selRoom));
-
-    // auto-select first bulb
     if (!selBulb && rbl.length) { selBulb = rbl[0].id; renderBulbList(); renderBulbDetail(); }
   }
 
@@ -144,15 +139,12 @@ const RoomsPage = (() => {
         </div>
         <button class="btn btn--ghost btn--sm btn-edit-bulb" data-bulb="${b.id}">${icon('edit',12)} Editar</button>
       </div>
-
       <div class="orb-wrap" style="padding:var(--sp-3) 0 var(--sp-4)">
-        <div class="orb${!b.on?'is-off':b.brightness<35?' is-dim':''}" id="bulb-orb">
+        <div class="orb${!b.on?' is-off':b.brightness<35?' is-dim':''}" id="bulb-orb">
           <div class="orb__ring"></div><div class="orb__ring2"></div>
         </div>
       </div>
-
       <div class="drow"><span class="drow__key">Liga / Desliga</span><div class="toggle ${b.on?'is-on':''}" id="tog-onoff"></div></div>
-
       <div style="margin:var(--sp-4) 0">
         <div style="display:flex;justify-content:space-between;margin-bottom:var(--sp-2)">
           <span style="font-size:11px;color:var(--text-mid)">Luminosidade</span>
@@ -163,7 +155,6 @@ const RoomsPage = (() => {
           <div class="slider-thumb" id="bri-thumb" style="left:${b.brightness}%"></div>
         </div>
       </div>
-
       <div style="margin-bottom:var(--sp-4)">
         <div style="font-size:11px;color:var(--text-mid);margin-bottom:var(--sp-2)">Temperatura de Cor</div>
         <div class="temp-btns">
@@ -173,50 +164,32 @@ const RoomsPage = (() => {
           <button class="temp-btn${b.temp==='6500K'?' is-active':''}" data-temp="6500K">Frio</button>
         </div>
       </div>
-
       <div style="margin-bottom:var(--sp-4)">
         <div style="font-size:11px;color:var(--text-mid);margin-bottom:var(--sp-2)">Cor da Luz</div>
         ${colorPickerHtml(b.color)}
       </div>
-
       <div class="drow"><span class="drow__key">Consumo</span><span class="drow__val">${b.power}W</span></div>
       <div class="drow"><span class="drow__key">IP</span><span class="drow__val" style="font-family:monospace;font-size:11px">${b.ip || '—'}</span></div>
-      <div class="drow"><span class="drow__key">Sinal</span><span class="drow__val">${b.rssi ? signalHtml(b.rssi) + ' ' + b.rssi + ' dBm' : '—'}</span></div>
-    `;
+      <div class="drow"><span class="drow__key">Sinal</span><span class="drow__val">${b.rssi ? signalHtml(b.rssi)+' '+b.rssi+' dBm' : '—'}</span></div>`;
 
     updateOrb(el.querySelector('#bulb-orb'), b);
 
-    // on/off
     el.querySelector('#tog-onoff').addEventListener('click', () => {
-      Data.toggleBulb(b.id);
-      renderBulbList(); renderBulbDetail();
+      Data.toggleBulb(b.id); renderBulbList(); renderBulbDetail();
     });
-
-    // brightness
-    bindSlider(
-      el.querySelector('#bri-track'), el.querySelector('#bri-fill'),
-      el.querySelector('#bri-thumb'), el.querySelector('#bri-label'),
-      b.brightness,
-      val => { Data.setBrightness(b.id, val); updateOrb(el.querySelector('#bulb-orb'), b); renderBulbList(); }
-    );
-
-    // temp
+    bindSlider(el.querySelector('#bri-track'), el.querySelector('#bri-fill'),
+      el.querySelector('#bri-thumb'), el.querySelector('#bri-label'), b.brightness,
+      val => { Data.setBrightness(b.id, val); updateOrb(el.querySelector('#bulb-orb'), b); renderBulbList(); });
     el.querySelectorAll('.temp-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         Data.setTemp(b.id, btn.dataset.temp);
-        el.querySelectorAll('.temp-btn').forEach(x => x.classList.remove('is-active'));
+        el.querySelectorAll('.temp-btn').forEach(x=>x.classList.remove('is-active'));
         btn.classList.add('is-active');
       });
     });
-
-    // color
     bindColorPicker(el, c => {
-      Data.setColor(b.id, c);
-      updateOrb(el.querySelector('#bulb-orb'), b);
-      renderBulbList();
+      Data.setColor(b.id, c); updateOrb(el.querySelector('#bulb-orb'), b); renderBulbList();
     });
-
-    // edit bulb btn
     el.querySelector('.btn-edit-bulb')?.addEventListener('click', () => openEditBulb(b.id));
   }
 
@@ -228,20 +201,11 @@ const RoomsPage = (() => {
     if (!isOn) {
       const bulbsInRoom = Data.getBulbs(roomId);
       partyTimers[roomId] = setInterval(() => {
-        bulbsInRoom.forEach(b => {
-          b.on = true;
-          b.color = PARTY_COLORS[Math.floor(Math.random()*PARTY_COLORS.length)];
-          b.brightness = 80 + Math.floor(Math.random()*20);
-        });
+        bulbsInRoom.forEach(b => { b.on=true; b.color=PARTY_COLORS[Math.floor(Math.random()*PARTY_COLORS.length)]; b.brightness=80+Math.floor(Math.random()*20); });
         renderBulbList();
-        if (selBulb && bulbsInRoom.find(b=>b.id===selBulb)) {
-          updateOrb(document.getElementById('bulb-orb'), Data.bulbs.find(b=>b.id===selBulb));
-        }
+        if (selBulb && bulbsInRoom.find(b=>b.id===selBulb)) updateOrb(document.getElementById('bulb-orb'), Data.bulbs.find(b=>b.id===selBulb));
       }, 500);
-    } else {
-      clearInterval(partyTimers[roomId]);
-      delete partyTimers[roomId];
-    }
+    } else { clearInterval(partyTimers[roomId]); delete partyTimers[roomId]; }
     renderBulbList(); renderRoomList();
   }
 
@@ -250,23 +214,21 @@ const RoomsPage = (() => {
     Modal.open(`
       <div class="modal__title">Novo Cômodo</div>
       <div class="input-wrap"><label>Nome</label><input class="input" id="m-room-name" placeholder="Ex: Varanda"></div>
-      <div class="input-wrap"><label>Ícone</label>${emojiPicker('💡', ()=>{})}
-      </div>
       <div class="input-wrap"><label>Cor de destaque</label><input type="color" class="input" id="m-room-color" value="#E2B84A" style="height:40px;padding:4px"></div>
       <div style="display:flex;gap:var(--sp-2);margin-top:var(--sp-4)">
         <button class="btn btn--ghost btn--full" data-modal-close>Cancelar</button>
         <button class="btn btn--primary btn--full" id="m-save-room">Salvar</button>
       </div>`, () => render());
 
-    let chosenEmoji = '💡';
-    bindEmojiPicker(Modal.getModal(), e => chosenEmoji = e);
-
-    document.getElementById('m-save-room').addEventListener('click', () => {
-      const name = document.getElementById('m-room-name').value.trim();
+    document.getElementById('m-save-room').addEventListener('click', async () => {
+      const btn   = document.getElementById('m-save-room');
+      const name  = document.getElementById('m-room-name').value.trim();
       if (!name) return toast('Informe o nome do cômodo');
       const color = document.getElementById('m-room-color').value;
-      Data.addRoom(name, 'bulb', color);
-      Modal.close(); render();
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      await Data.addRoom(name, 'bulb', color);
+      toast('Cômodo criado!');
+      Modal.close();
     });
   }
 
@@ -281,11 +243,14 @@ const RoomsPage = (() => {
         <button class="btn btn--primary btn--full" id="m-save-room">Salvar</button>
       </div>`, () => render());
 
-    document.getElementById('m-save-room').addEventListener('click', () => {
+    document.getElementById('m-save-room').addEventListener('click', async () => {
+      const btn  = document.getElementById('m-save-room');
       const name = document.getElementById('m-room-name').value.trim();
       if (!name) return toast('Informe o nome');
-      Data.editRoom(roomId, { name, color: document.getElementById('m-room-color').value });
-      Modal.close(); render();
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      await Data.editRoom(roomId, { name, color: document.getElementById('m-room-color').value });
+      toast('Cômodo atualizado!');
+      Modal.close();
     });
   }
 
@@ -300,12 +265,15 @@ const RoomsPage = (() => {
         <button class="btn btn--primary btn--full" id="m-save-bulb">Adicionar</button>
       </div>`, () => { renderBulbList(); renderBulbDetail(); });
 
-    document.getElementById('m-save-bulb').addEventListener('click', () => {
-      const name = document.getElementById('m-bulb-name').value.trim();
+    document.getElementById('m-save-bulb').addEventListener('click', async () => {
+      const btn   = document.getElementById('m-save-bulb');
+      const name  = document.getElementById('m-bulb-name').value.trim();
       if (!name) return toast('Informe o nome');
-      const ip = document.getElementById('m-bulb-ip').value.trim() || null;
+      const ip    = document.getElementById('m-bulb-ip').value.trim() || null;
       const power = parseInt(document.getElementById('m-bulb-power').value) || 5;
-      Data.addBulb(roomId, name, { ip, power, status: ip ? 'online' : 'offline' });
+      btn.disabled = true; btn.textContent = 'Salvando...';
+      await Data.addBulb(roomId, name, { ip, power, status: ip ? 'online' : 'offline' });
+      toast('Lâmpada adicionada!');
       Modal.close();
     });
   }
@@ -327,9 +295,10 @@ const RoomsPage = (() => {
       if (!name) return toast('Informe o nome');
       Data.editBulb(bulbId, {
         name,
-        ip: document.getElementById('m-bulb-ip').value.trim() || null,
+        ip:    document.getElementById('m-bulb-ip').value.trim() || null,
         power: parseInt(document.getElementById('m-bulb-power').value) || b.power,
       });
+      toast('Lâmpada atualizada!');
       Modal.close();
     });
   }

@@ -80,9 +80,9 @@
   </div>
 
   <div class="sidebar__footer">
-    <div class="nav-item">
+    <div class="nav-item" data-nav="account">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      Conta
+      <span id="topbar-user-name">Conta</span>
     </div>
   </div>
 </aside>
@@ -290,6 +290,16 @@
     </div>
   </div>
 
+  <!-- ═════ ACCOUNT ═════ -->
+  <div class="page" id="page-account">
+    <div class="page-inner">
+      <div class="sec-hdr mb-4">
+        <div class="sec-hdr__title">Minha Conta</div>
+      </div>
+      <div style="max-width:480px" id="account-content"></div>
+    </div>
+  </div>
+
 </main>
 
 <!-- MOBILE BOTTOM NAV -->
@@ -327,6 +337,7 @@
 <div id="toast"></div>
 
 <!-- SCRIPTS -->
+<script src="js/api.js"></script>
 <script src="js/data.js"></script>
 <script src="js/router.js"></script>
 <script src="js/ui.js"></script>
@@ -337,6 +348,7 @@
 <script src="js/pages/commands.js"></script>
 <script src="js/pages/energy.js"></script>
 <script src="js/pages/wifi.js"></script>
+<script src="js/pages/account.js"></script>
 <script src="js/main.js"></script>
 
 <script>

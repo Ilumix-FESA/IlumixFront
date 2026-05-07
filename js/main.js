@@ -1,9 +1,22 @@
 /* ============================================================
-   ILUMIX — Main bootstrap
+   ILUMIX — Main bootstrap v2
    ============================================================ */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
-  /* ── Register pages ── */
+  /* ── Auth guard ── */
+  if (!Api.requireAuth()) return;
+
+  /* ── Exibe nome do usuário ── */
+  const loggedUser = Api.getUser();
+  if (loggedUser) {
+    const nameEl = document.getElementById('topbar-user-name');
+    if (nameEl) nameEl.textContent = loggedUser.name?.split(' ')[0] || loggedUser.email;
+  }
+
+  /* ── Carrega dados da API ── */
+  await Data.loadFromApi();
+
+  /* ── Registra páginas ── */
   Router.register('dashboard', DashboardPage.render);
   Router.register('rooms',     RoomsPage.render);
   Router.register('scenes',    ScenesPage.render);
@@ -11,37 +24,42 @@ document.addEventListener('DOMContentLoaded', () => {
   Router.register('commands',  CommandsPage.render);
   Router.register('energy',    EnergyPage.render);
   Router.register('wifi',      WifiPage.render);
+  Router.register('account',   AccountPage.render);
 
-  /* ── Bind nav items ── */
+  /* ── Binds de navegação ── */
   document.querySelectorAll('[data-nav]').forEach(el => {
     Router.bindNav(el, el.dataset.nav);
   });
 
-  /* ── Mobile sidebar toggle ── */
-  const menuBtn  = document.querySelector('.btn-menu');
-  const sidebar  = document.querySelector('.sidebar');
-  const overlay  = document.querySelector('.sidebar-overlay');
+  /* ── Sidebar mobile ── */
+  const menuBtn = document.querySelector('.btn-menu');
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
 
-  function openSidebar()  { sidebar.classList.add('is-open'); overlay.classList.add('is-visible'); }
+  function openSidebar()  { sidebar.classList.add('is-open');    overlay.classList.add('is-visible'); }
   function closeSidebar() { sidebar.classList.remove('is-open'); overlay.classList.remove('is-visible'); }
 
   menuBtn?.addEventListener('click', openSidebar);
   overlay?.addEventListener('click', closeSidebar);
   document.querySelectorAll('[data-nav]').forEach(el => el.addEventListener('click', closeSidebar));
 
-  /* ── Clock ── */
+  /* ── Clock + saudação ── */
   function clock() {
-    const el = document.getElementById('topbar-sub');
-    if (!el) return;
     const now = new Date();
     const h   = now.getHours();
     const greeting = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-    el.textContent = greeting + ' · ' + now.toLocaleString('pt-BR', { weekday:'long', day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit' });
-    document.getElementById('greeting').textContent = greeting + ', Casa';
+    const name = loggedUser?.name?.split(' ')[0] || 'Casa';
+
+    const greetEl = document.getElementById('greeting');
+    const subEl   = document.getElementById('topbar-sub');
+    if (greetEl) greetEl.textContent = `${greeting}, ${name}`;
+    if (subEl)   subEl.textContent   = now.toLocaleString('pt-BR', {
+      weekday:'long', day:'2-digit', month:'long', hour:'2-digit', minute:'2-digit'
+    });
   }
   clock(); setInterval(clock, 30_000);
 
-  /* ── Init ── */
+  /* ── Init router ── */
   const hash = location.hash.replace('#','');
   Router.init(hash || 'dashboard');
 });
