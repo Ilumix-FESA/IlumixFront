@@ -81,6 +81,10 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
       Energia
     </div>
+    <div class="nav-item" data-nav="history">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 8v5l3 3"/><path d="M12 21a9 9 0 110-18 9 9 0 010 18z"/></svg>
+      Dados Históricos
+    </div>
   </div>
 
   <div class="sidebar__footer">
@@ -304,6 +308,11 @@
     </div>
   </div>
 
+  <!-- ═════ HISTÓRICO ═════ -->
+  <div class="page" id="page-history">
+    <div class="page-inner"></div>
+  </div>
+
   <!-- ═════ ACCOUNT ═════ -->
   <div class="page" id="page-account">
     <div class="page-inner">
@@ -363,8 +372,10 @@
 <script src="js/pages/commands.js"></script>
 <script src="js/pages/energy.js"></script>
 <script src="js/pages/wifi.js"></script>
+<script src="js/pages/history.js"></script>
 <script src="js/pages/account.js"></script>
 <script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
   // Bind wifi add button after DOM loads

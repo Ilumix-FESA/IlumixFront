@@ -118,6 +118,7 @@ const Api = (() => {
     // Cor: pode enviar hex (#FF0000) — o backend converte para "255,0,0" para o ESP32
     command:    (id,commandName,value) =>
                                    PATCH(`/api/lamp/${id}/command`, {commandId:commandName, value:String(value)}),
+    history:    (id,lastN=20)  => GET(`/api/lamp/${id}/historical/luminosity?lastN=${Number(lastN)}`),
     delete:     id              => DELETE(`/api/lamp/${id}`),
   };
 

@@ -1,6 +1,6 @@
 /* ============================================================
    ILUMIX — Data Store v7
-   Tudo vem da API. Comandos reais. Schedule executor incluído.
+   Tudo vem da API. Comandos reais padronizados.
    ============================================================ */
 const Data = (() => {
 
@@ -31,15 +31,6 @@ const Data = (() => {
   const activeBulbs = () => bulbs.filter(b=>b.on).length;
   const activeScene = () => scenes.find(s=>s.active)||null;
 
-  /* ── Encontra Name do comando na lista de comandos da lâmpada ── */
-  function _findCmd(cmds, ...possibleNames) {
-    for (const n of possibleNames) {
-      const c = cmds.find(c=>(c.name||c.Name||'').toLowerCase()===n.toLowerCase());
-      if (c) return (c.name||c.Name).toLowerCase();
-    }
-    return null;
-  }
-
   /* ── Mappers ─────────────────────────────────────────────── */
   function _mapRoom(loc) {
     return {
@@ -60,9 +51,9 @@ const Data = (() => {
       }
       return '';
     };
-    const stateRaw = getAttrVal('status','state','power')||'off';
+    const stateRaw = getAttrVal('state')||'off';
     const isOn     = ['on','true','1','yes'].includes(stateRaw.toLowerCase());
-    const briRaw   = parseInt(getAttrVal('brightness','luminosity')||'100');
+    const briRaw   = parseInt(getAttrVal('brightness')||'100');
     const colorRaw = getAttrVal('color')||'';
     const cmds     = lamp.commands||lamp.Commands||[];
     // Banco salva cor como "255,0,128" (RGB) ou "#RRGGBB" (hex) — normaliza para hex
@@ -147,6 +138,7 @@ const Data = (() => {
 
   /* ══════════════════════════════════════════════════════════
      SYNC — envia comando ao backend
+     AGORA USANDO OS NOMES EXATOS DEFINIDOS NO SEU BACKEND
   ══════════════════════════════════════════════════════════ */
   async function _sendCmd(bulb, commandName, value) {
     if (!bulb._apiId || !commandName) return;
@@ -160,25 +152,21 @@ const Data = (() => {
   }
 
   function _syncToggle(bulb) {
-    const name = bulb.on
-      ? _findCmd(bulb._cmds,'on','Switch state','power on','ligar')
-      : _findCmd(bulb._cmds,'off','Switch state','power off','desligar');
-    if (name) _sendCmd(bulb, name, bulb.on?'On':'Off');
+    // O backend espera o comando "on" ou "off"
+    const cmd = bulb.on ? 'on' : 'off';
+    _sendCmd(bulb, cmd, cmd);
   }
 
   function _syncBrightness(bulb) {
-    const name = _findCmd(bulb._cmds,'setbrightness','Set Brightness','brightness','brilho','luminosidade');
-    if (name) _sendCmd(bulb, name, bulb.brightness);
+    _sendCmd(bulb, 'setBrightness', bulb.brightness);
   }
 
   function _syncColor(bulb) {
-    const name = _findCmd(bulb._cmds,'setcolor','Set Color','color','cor');
-    if (name) _sendCmd(bulb, name, bulb.color);
+    _sendCmd(bulb, 'setColor', bulb.color);
   }
 
   function _syncTemp(bulb) {
-    const name = _findCmd(bulb._cmds,'setcolortemperature','Set Color Temperature','colortemperature','temperatura');
-    if (name) _sendCmd(bulb, name, bulb.temp);
+    _sendCmd(bulb, 'setColorTemperature', bulb.temp);
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -209,21 +197,17 @@ const Data = (() => {
 
   /* ══════════════════════════════════════════════════════════
      BULBS CRUD
-     Fluxo: POST /api/lamp → PUT /api/lamp/{id}/configure
   ══════════════════════════════════════════════════════════ */
   async function addBulb(name, roomId, ico) {
-    // 1. Cria a lâmpada (backend gera commands e attributes)
     const createRes = await Api.lamps.create();
     const lampData  = createRes.lamp||createRes;
     const lampId    = lampData.id||lampData.Id||lampData._id;
     if (!lampId) throw new Error('Backend não retornou ID da lâmpada.');
 
-    // 2. Configura nome + localização
     const room       = rooms.find(r=>r.id===roomId);
     const locationId = room?._apiId||'';
     await Api.lamps.configure(lampId, name, locationId, ico||'');
 
-    // 3. Busca lâmpada completa com commands
     let fullLamp;
     try { fullLamp = await Api.lamps.getById(lampId); } catch { fullLamp = lampData; }
 
@@ -263,29 +247,22 @@ const Data = (() => {
   /* ══════════════════════════════════════════════════════════
      SCENES CRUD + ACTIVATE
   ══════════════════════════════════════════════════════════ */
-
-  /* Constrói os LampSelecioned a partir das lâmpadas/rooms escolhidas e das settings da cena */
   function buildLampSelecioned(lampIds, locationIds, brightness, temp, color) {
     const allBulbIds = new Set(lampIds||[]);
-    // Adiciona todas as lâmpadas dos rooms selecionados
     (locationIds||[]).forEach(rid => getBulbs(rid).forEach(b=>allBulbIds.add(b.id)));
 
     return [...allBulbIds].map(bid => {
       const b = bulbs.find(b=>b.id===bid);
       if (!b?._apiId) return null;
-      const commands = [];
-      // Liga a lâmpada
-      const onCmd = _findCmd(b._cmds,'on','Switch state','ligar');
-      if (onCmd) commands.push({ commandId:onCmd, value:'On' });
-      // Brilho
-      const briCmd = _findCmd(b._cmds,'setbrightness','Set Brightness','brightness');
-      if (briCmd) commands.push({ commandId:briCmd, value:String(brightness) });
-      // Cor
-      const colCmd = _findCmd(b._cmds,'setcolor','Set Color','color');
-      if (colCmd) commands.push({ commandId:colCmd, value:color });
-      // Temperatura
-      const tmpCmd = _findCmd(b._cmds,'setcolortemperature','Set Color Temperature','colortemperature');
-      if (tmpCmd) commands.push({ commandId:tmpCmd, value:temp });
+      
+      // COMANDOS EXATOS COMO NO BACKEND:
+      const commands = [
+        { commandId: 'on', value: 'on' },
+        { commandId: 'setBrightness', value: String(brightness) }
+      ];
+      if (color) commands.push({ commandId: 'setColor', value: color });
+      if (temp)  commands.push({ commandId: 'setColorTemperature', value: temp });
+
       return { lampId: b._apiId, commands };
     }).filter(Boolean);
   }
@@ -295,7 +272,6 @@ const Data = (() => {
     const res  = await Api.scenes.create({...d, lampSelecioned:lampSel, locationSelecioned:[]});
     const sData= res.scene||res;
     const scene= _mapScene(sData);
-    // garante os campos visuais mesmo que o backend não retorne completo
     Object.assign(scene, {
       name:d.name, icon:d.ico||'scene', desc:d.description||'',
       brightness:d.brightness, temp:d.temp, color:d.color,
@@ -323,15 +299,12 @@ const Data = (() => {
     const s = scenes.find(s=>s.id===id);
     if (!s) return;
 
-    // 1. Chama backend (marca ativo + executa LampSelecioned via Fiware se configurado)
     if (s._apiId) {
       try { await Api.scenes.activate(s._apiId); } catch(e) { console.warn('[scene activate backend]',e.message); }
     }
 
-    // 2. Frontend executa diretamente nas lâmpadas (garante funcionamento mesmo sem Fiware)
     await _executeSceneOnLamps(s);
 
-    // 3. Atualiza estado local
     scenes.forEach(x=>x.active=x.id===id);
     bulbs.filter(b=>b.on).forEach(b=>{
       b.brightness=s.brightness; b.color=s.color; b.temp=s.temp;
@@ -340,8 +313,7 @@ const Data = (() => {
   }
 
   async function _executeSceneOnLamps(scene) {
-    // Executa comandos em cada lâmpada associada à cena
-    const allCmds = []; // {bulb, commandName, value}
+    const allCmds = [];
 
     if (scene.lampSelecioned?.length) {
       for (const ls of scene.lampSelecioned) {
@@ -360,19 +332,15 @@ const Data = (() => {
         }
       }
     }
-    // Se a cena não tem lâmpadas associadas, aplica em todas as lâmpadas acesas
+
     if (!allCmds.length) {
       for (const b of bulbs.filter(b=>b.on)) {
-        const briCmd = _findCmd(b._cmds,'setbrightness','Set Brightness');
-        const colCmd = _findCmd(b._cmds,'setcolor','Set Color');
-        const tmpCmd = _findCmd(b._cmds,'setcolortemperature','Set Color Temperature','colortemperature');
-        if (briCmd) allCmds.push({b, name:briCmd, value:String(scene.brightness)});
-        if (colCmd) allCmds.push({b, name:colCmd, value:scene.color});
-        if (tmpCmd) allCmds.push({b, name:tmpCmd, value:scene.temp});
+        allCmds.push({b, name:'setBrightness', value:String(scene.brightness)});
+        allCmds.push({b, name:'setColor', value:scene.color});
+        allCmds.push({b, name:'setColorTemperature', value:scene.temp});
       }
     }
 
-    // Envia os comandos
     for (const {b, name, value} of allCmds) {
       await _sendCmd(b, name, value);
     }
@@ -383,22 +351,20 @@ const Data = (() => {
   ══════════════════════════════════════════════════════════ */
   function _startScheduler() {
     if (_schedTimer) clearInterval(_schedTimer);
-    _checkSchedules(); // executa imediatamente no load
-    _schedTimer = setInterval(_checkSchedules, 60_000); // verifica a cada minuto
+    _checkSchedules();
+    _schedTimer = setInterval(_checkSchedules, 60_000);
   }
 
   async function _checkSchedules() {
     const now  = new Date();
     const hhmm = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    const dow  = now.getDay(); // 0=Dom, 1=Seg...
-    // Converte para índice do array [Seg,Ter,Qua,Qui,Sex,Sáb,Dom] = [0..6]
+    const dow  = now.getDay(); 
     const dayIdx = dow===0 ? 6 : dow-1;
 
     for (const sched of schedules) {
       if (!sched.on) continue;
       if (sched.time !== hhmm) continue;
       if (sched.days && !sched.days[dayIdx]) continue;
-      // Evita executar duas vezes no mesmo minuto
       const key = `sched_last_${sched.id}`;
       const lastRan = sessionStorage.getItem(key);
       if (lastRan === hhmm) continue;
@@ -411,20 +377,17 @@ const Data = (() => {
 
   async function _executeSchedule(sched) {
     try {
-      // Ativa a cena se configurada
       if (sched.sceneId) {
         await activateScene(sched.sceneId);
         logCommand('Rotina: '+sched.name+' → cena ativada', 'Rotina');
         return;
       }
-      // Aplica ação genérica no target
       const targetBulbs =
         sched.targetType==='room' ? getBulbs(sched.targetId) :
         sched.targetType==='bulb' ? bulbs.filter(b=>b.id===sched.targetId) :
         bulbs;
 
       for (const b of targetBulbs) {
-        // Por padrão, liga as lâmpadas
         b.on = true;
         _syncToggle(b);
       }
