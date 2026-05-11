@@ -63,15 +63,20 @@ const Data = (() => {
     const stateRaw = getAttrVal('status','state','power')||'off';
     const isOn     = ['on','true','1','yes'].includes(stateRaw.toLowerCase());
     const briRaw   = parseInt(getAttrVal('brightness','luminosity')||'100');
-    const colorRaw = getAttrVal('color')||'#FFFFFF';
+    const colorRaw = getAttrVal('color')||'';
     const cmds     = lamp.commands||lamp.Commands||[];
+    // Banco salva cor como "255,0,128" (RGB) ou "#RRGGBB" (hex) — normaliza para hex
+    const _rgbToHex = s => '#' + s.split(',').map(v => parseInt(v.trim()).toString(16).padStart(2,'0')).join('');
+    const colorHex  = colorRaw.startsWith('#') ? colorRaw
+                    : colorRaw.includes(',')    ? _rgbToHex(colorRaw)
+                    : '#FFFFFF';
     return {
       id:         lamp.id||lamp.Id||lamp._id,
       roomId:     lamp.locationId||lamp.LocationId||lamp.Location_id||null,
       name:       lamp.name||lamp.Name||'(sem nome)',
       on:         isOn,
       brightness: isNaN(briRaw)?100:Math.min(100,Math.max(0,briRaw)),
-      color:      colorRaw.startsWith('#')?colorRaw:'#FFFFFF',
+      color:      colorHex,
       temp:       getAttrVal('colortemperature','temperature')||'4000K',
       power:      0, status:'online',
       _apiId:     lamp.id||lamp.Id||lamp._id,
