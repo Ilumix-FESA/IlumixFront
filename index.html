@@ -100,7 +100,7 @@
 
   <!-- TOPBAR -->
   <div class="topbar">
-    <div style="display:flex;align-items:center;gap:var(--sp-3)">
+    <div class="topbar__start">
       <button class="btn btn--icon btn-menu">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
@@ -110,7 +110,7 @@
       </div>
     </div>
     <div class="topbar__actions">
-      <button class="btn btn--icon" style="position:relative">
+      <button class="btn btn--icon">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
         <div class="notif-dot"></div>
       </button>
@@ -122,27 +122,27 @@
     <div class="page-inner">
       <div class="g4 mb-4">
         <div class="card">
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Luzes Ativas</div>
+          <div class="stat-label">Luzes Ativas</div>
           <div class="stat-val"><b id="stat-lights">—</b></div>
           <div class="stat-delta"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>+2 desde ontem</div>
         </div>
         <div class="card">
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Consumo</div>
+          <div class="stat-label">Consumo</div>
           <div class="stat-val"><b id="stat-power">—</b></div>
           <div class="stat-delta down"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>−18% vs ontem</div>
         </div>
         <div class="card">
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Economia</div>
+          <div class="stat-label">Economia</div>
           <div class="stat-val">R$<b>31</b></div>
           <div class="stat-delta"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>Meta atingida</div>
         </div>
         <div class="card">
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Cena Ativa</div>
-          <div style="display:flex;align-items:center;gap:var(--sp-2);margin-top:var(--sp-2)">
-            <span style="color:var(--amber)" id="stat-scene-icon"></span>
-            <span style="font-size:13px;font-weight:500" id="stat-scene-name">—</span>
+          <div class="stat-label">Cena Ativa</div>
+          <div class="stat-scene">
+            <span class="stat-scene__icon" id="stat-scene-icon"></span>
+            <span class="stat-scene__name" id="stat-scene-name">—</span>
           </div>
-          <div style="margin-top:4px"><span class="badge badge--on">ativa</span></div>
+          <div class="stat-scene__badge"><span class="badge badge--on">ativa</span></div>
         </div>
       </div>
 
@@ -160,7 +160,6 @@
     </div>
   </div>
 
-  <!-- ═════ ROOMS ═════ -->
   <!-- ═════ LÂMPADAS ═════ -->
   <div class="page" id="page-lamps">
     <div class="page-inner">
@@ -171,37 +170,38 @@
     </div>
   </div>
 
+  <!-- ═════ CÔMODOS ═════ -->
   <div class="page" id="page-rooms">
     <div class="page-inner">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-4)">
-        <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid)">Controle de Cômodos</div>
-        <div style="display:flex;gap:var(--sp-2)">
+      <div class="sec-hdr mb-4">
+        <div class="sec-hdr__title">Controle de Cômodos</div>
+        <div class="hdr-actions">
           <button class="btn btn--party btn--sm" id="btn-party">Modo festa</button>
         </div>
       </div>
       <div class="g-rooms">
-        <!-- Col 1: rooms -->
+        <!-- Col 1: lista de cômodos -->
         <div>
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid);margin-bottom:var(--sp-3)">Cômodos</div>
+          <div class="sec-hdr__title mb-3">Cômodos</div>
           <div id="room-list"></div>
         </div>
-        <!-- Col 2: bulbs -->
+        <!-- Col 2: lâmpadas do cômodo -->
         <div>
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid);margin-bottom:var(--sp-3)" id="bulb-list-title">Lâmpadas</div>
+          <div class="sec-hdr__title mb-3" id="bulb-list-title">Lâmpadas</div>
           <div id="bulb-list"></div>
         </div>
-        <!-- Col 3: detail -->
+        <!-- Col 3: detalhe da lâmpada -->
         <div class="rooms-detail" id="rooms-detail-col">
-          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-mid);margin-bottom:var(--sp-3)">Controles</div>
-          <div class="card card--panel" id="bulb-detail" style="min-height:200px">
-            <div style="color:var(--text-lo);font-size:12px">Selecione uma lâmpada</div>
+          <div class="sec-hdr__title mb-3">Controles</div>
+          <div class="card card--panel card--detail" id="bulb-detail">
+            <div class="empty-hint">Selecione uma lâmpada</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ═════ SCENES ═════ -->
+  <!-- ═════ CENAS ═════ -->
   <div class="page" id="page-scenes">
     <div class="page-inner">
       <div class="sec-hdr mb-4">
@@ -211,7 +211,7 @@
     </div>
   </div>
 
-  <!-- ═════ SCHEDULE ═════ -->
+  <!-- ═════ HORÁRIOS ═════ -->
   <div class="page" id="page-schedule">
     <div class="page-inner">
       <div class="sec-hdr mb-4">
@@ -221,7 +221,7 @@
     </div>
   </div>
 
-  <!-- ═════ COMMANDS ═════ -->
+  <!-- ═════ COMANDOS DE VOZ ═════ -->
   <div class="page" id="page-commands">
     <div class="page-inner">
       <div class="g2">
@@ -231,7 +231,7 @@
         </div>
         <div>
           <div class="sec-hdr mb-3"><div class="sec-hdr__title">Atalhos Rápidos</div></div>
-          <div style="display:flex;flex-wrap:wrap;gap:var(--sp-2);margin-bottom:var(--sp-5)" id="quick-chips"></div>
+          <div class="chips-wrap" id="quick-chips"></div>
           <div class="sec-hdr mb-3"><div class="sec-hdr__title">Histórico</div></div>
           <div id="cmd-history"></div>
         </div>
@@ -239,7 +239,7 @@
     </div>
   </div>
 
-  <!-- ═════ WIFI ═════ -->
+  <!-- ═════ WI-FI & DEVICES ═════ -->
   <div class="page" id="page-wifi">
     <div class="page-inner">
       <div class="g2">
@@ -258,20 +258,20 @@
         <div>
           <div class="sec-hdr mb-3"><div class="sec-hdr__title">Adicionar Lâmpada</div></div>
           <div class="card card--panel">
-            <div style="text-align:center;padding:var(--sp-4) 0">
-              <div style="width:56px;height:56px;background:var(--amber-dim);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto var(--sp-3);color:var(--amber)">
+            <div class="wifi-pair-wrap">
+              <div class="wifi-pair-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 21h6m-6-3h6m-3-15a7 7 0 017 7c0 2.5-1.3 4.7-3 6H8c-1.7-1.3-3-3.5-3-6a7 7 0 017-7z"/></svg>
               </div>
-              <div style="font-size:14px;font-weight:600;margin-bottom:var(--sp-2)">Parear Nova Lâmpada</div>
-              <div style="font-size:12px;color:var(--text-mid);margin-bottom:var(--sp-4)">Ligue a lâmpada e ela aparecerá automaticamente, ou adicione manualmente via IP.</div>
+              <div class="wifi-pair-title">Parear Nova Lâmpada</div>
+              <div class="wifi-pair-sub">Informe o nome da lâmpada e o cômodo para cadastrá-la no sistema.</div>
             </div>
             <div class="input-wrap"><label>Nome da Lâmpada</label><input class="input" id="nw-name" placeholder="Ex: Spot Teto"></div>
-            <div class="input-wrap"><label>Cômodo</label>
+            <div class="input-wrap">
+              <label>Cômodo</label>
               <select class="input" id="nw-room">
-                ${['sala','quarto','escritorio','cozinha','banheiro','garagem'].map(id=>`<option value="${id}">${{sala:'Sala',quarto:'Quarto',escritorio:'Escritório',cozinha:'Cozinha',banheiro:'Banheiro',garagem:'Garagem'}[id]}</option>`).join('')}
+                <option value="">— Sem cômodo —</option>
               </select>
             </div>
-            <div class="input-wrap"><label>IP (se conhecido)</label><input class="input" id="nw-ip" placeholder="192.168.1.xxx"></div>
             <button class="btn btn--primary btn--full" id="btn-add-wifi-bulb">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Adicionar
@@ -282,7 +282,7 @@
     </div>
   </div>
 
-  <!-- ═════ ENERGY ═════ -->
+  <!-- ═════ ENERGIA ═════ -->
   <div class="page" id="page-energy">
     <div class="page-inner">
       <div class="g2 mb-4">
@@ -308,18 +308,18 @@
     </div>
   </div>
 
-  <!-- ═════ HISTÓRICO ═════ -->
+  <!-- ═════ DADOS HISTÓRICOS ═════ -->
   <div class="page" id="page-history">
     <div class="page-inner"></div>
   </div>
 
-  <!-- ═════ ACCOUNT ═════ -->
+  <!-- ═════ CONTA ═════ -->
   <div class="page" id="page-account">
     <div class="page-inner">
       <div class="sec-hdr mb-4">
         <div class="sec-hdr__title">Minha Conta</div>
       </div>
-      <div style="max-width:480px" id="account-content"></div>
+      <div class="account-wrap" id="account-content"></div>
     </div>
   </div>
 
@@ -376,27 +376,6 @@
 <script src="js/pages/account.js"></script>
 <script src="js/main.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-  // Bind wifi add button after DOM loads
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('btn-add-wifi-bulb')?.addEventListener('click', () => {
-      const name   = document.getElementById('nw-name').value.trim();
-      const roomId = document.getElementById('nw-room').value;
-      const ip     = document.getElementById('nw-ip').value.trim() || null;
-      if (!name) return toast('Informe o nome da lâmpada');
-      Data.addBulb(roomId, name, { ip, status: ip ? 'online' : 'offline', rssi: ip ? -62 : null });
-      document.getElementById('nw-name').value = '';
-      document.getElementById('nw-ip').value   = '';
-      toast('Lâmpada adicionada!');
-      WifiPage.render();
-    });
-
-    document.getElementById('btn-scan')?.addEventListener('click', btn => {
-      toast('Escaneando rede...');
-    });
-  });
-</script>
 
 </body>
 </html>

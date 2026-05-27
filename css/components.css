@@ -459,3 +459,174 @@
 @media (max-width: 900px) {
   #toast { bottom: 72px; }
 }
+
+/* ── Topbar left group ── */
+.topbar__start { display: flex; align-items: center; gap: var(--sp-3); }
+
+/* ── Uppercase label used in stat cards and column headers ── */
+.stat-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-mid); }
+
+/* ── "Cena Ativa" stat card content ── */
+.stat-scene       { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); }
+.stat-scene__icon { color: var(--amber); }
+.stat-scene__name { font-size: 13px; font-weight: 500; }
+.stat-scene__badge { margin-top: 4px; }
+
+/* ── Grouped action buttons in a header ── */
+.hdr-actions { display: flex; gap: var(--sp-2); }
+
+/* ── Card with minimum height for detail panels ── */
+.card--detail { min-height: 200px; }
+
+/* ── Placeholder / empty state text ── */
+.empty-hint { color: var(--text-lo); font-size: 12px; }
+
+/* ── Quick-chips container ── */
+.chips-wrap { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+
+/* ── WiFi pair add card ── */
+.wifi-pair-wrap  { text-align: center; padding: var(--sp-4) 0; }
+.wifi-pair-icon  { width: 56px; height: 56px; background: var(--amber-dim); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--sp-3); color: var(--amber); }
+.wifi-pair-title { font-size: 14px; font-weight: 600; margin-bottom: var(--sp-2); }
+.wifi-pair-sub   { font-size: 12px; color: var(--text-mid); margin-bottom: var(--sp-4); }
+
+/* ── Account page container ── */
+.account-wrap { max-width: 480px; }
+
+/* ── Text color utilities (used in JS-generated markup) ── */
+.text-green  { color: var(--green); }
+.text-lo     { color: var(--text-lo); }
+.text-amber  { color: var(--amber); }
+.text-flex   { display: flex; align-items: center; gap: var(--sp-3); }
+
+/* ── Plan cards (account + cadastro step 4) ── */
+.plan-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.plan-card {
+  background: var(--dark-2);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  position: relative;
+}
+
+.plan-card:hover { border-color: var(--border-hover); }
+
+.plan-card.is-selected {
+  border-color: var(--amber);
+  background: var(--dark-3);
+}
+
+.plan-card.is-selected::after {
+  content: '✓';
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  width: 22px;
+  height: 22px;
+  background: var(--amber);
+  border-radius: 50%;
+  color: var(--dark-0);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-card__name {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  margin-bottom: 8px;
+}
+
+.plan-card__price {
+  font-size: 22px;
+  font-weight: 200;
+  color: var(--text-hi);
+  letter-spacing: -0.5px;
+  margin-bottom: 2px;
+}
+
+.plan-card__period {
+  font-size: 9px;
+  color: var(--text-lo);
+  margin-bottom: 10px;
+  min-height: 12px;
+}
+
+.plan-card__badge {
+  display: inline-block;
+  background: var(--amber);
+  color: var(--dark-0);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* ── CC form (account + cadastro step 4) ── */
+.cc-form {
+  display: none;
+  margin-top: 16px;
+  padding: 20px;
+  background: var(--dark-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.cc-form.is-visible { display: block; }
+
+.cc-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cc-form__title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+
+.cc-brands { display: flex; gap: 5px; }
+
+.cc-brand {
+  padding: 3px 7px;
+  background: var(--dark-4);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-lo);
+  letter-spacing: 0.5px;
+}
+
+.cc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cc-notice {
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--text-lo);
+  text-align: center;
+}
+

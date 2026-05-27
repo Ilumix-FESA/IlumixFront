@@ -1,6 +1,8 @@
 /* ============================================================
-   ILUMIX — Data Store v7
-   Tudo vem da API. Comandos reais padronizados.
+   ILUMIX — Data Store v8
+   Sincronizado com o backend (commit b47c24d).
+   - CommandId agora é int (Commands.Id do banco)
+   - Rotas: /api/DevicesUsers, /api/Locations, /api/Scenes
    ============================================================ */
 const Data = (() => {
 
@@ -55,53 +57,52 @@ const Data = (() => {
     const isOn     = ['on','true','1','yes'].includes(stateRaw.toLowerCase());
     const briRaw   = parseInt(getAttrVal('brightness')||'100');
     const colorRaw = getAttrVal('color')||'';
-    const cmds     = lamp.commands||lamp.Commands||[];
-    // Banco salva cor como "255,0,128" (RGB) ou "#RRGGBB" (hex) — normaliza para hex
     const _rgbToHex = s => '#' + s.split(',').map(v => parseInt(v.trim()).toString(16).padStart(2,'0')).join('');
     const colorHex  = colorRaw.startsWith('#') ? colorRaw
                     : colorRaw.includes(',')    ? _rgbToHex(colorRaw)
                     : '#FFFFFF';
+
+    // Monta mapa commandName → commandId (int) a partir de Commands[] retornado pelo backend
+    const cmds = lamp.commands||lamp.Commands||[];
+    const commandIds = {};
+    cmds.forEach(c => {
+      const name = c.name||c.Name;
+      const id   = c.id||c.Id;
+      if (name && id != null) commandIds[name] = id;
+    });
+
     return {
-      id:         lamp.id||lamp.Id||lamp._id,
-      roomId:     lamp.locationId||lamp.LocationId||lamp.Location_id||null,
-      name:       lamp.name||lamp.Name||'(sem nome)',
-      on:         isOn,
-      brightness: isNaN(briRaw)?100:Math.min(100,Math.max(0,briRaw)),
-      color:      colorHex,
-      temp:       getAttrVal('colortemperature','temperature')||'4000K',
-      power:      0, status:'online',
-      _apiId:     lamp.id||lamp.Id||lamp._id,
-      _cmds:      cmds,
-      _attrs:     attrs,
+      id:          lamp.id||lamp.Id||lamp._id,
+      roomId:      lamp.idLocation||lamp.IdLocation||lamp.locationId||lamp.LocationId||null,
+      name:        lamp.name||lamp.Name||'(sem nome)',
+      on:          isOn,
+      brightness:  isNaN(briRaw)?100:Math.min(100,Math.max(0,briRaw)),
+      color:       colorHex,
+      temp:        getAttrVal('colortemperature','temperature')||'4000K',
+      power:       0,
+      status:      'online',
+      _apiId:      lamp.id||lamp.Id||lamp._id,
+      _commandIds: commandIds,
+      _cmds:       cmds,
+      _attrs:      attrs,
     };
   }
 
   function _mapScene(s) {
     return {
-      id:         s.id||s.Id||s._id,
-      name:       s.name||s.Name,
-      icon:       s.ico||s.Ico||'scene',
-      desc:       s.description||s.Description||'',
-      brightness: s.brightness??s.Brightness??80,
-      temp:       s.temp||s.Temp||'2700K',
-      color:      s.color||s.Color||'#E2B84A',
-      active:     s.active??s.Active??false,
-      // lâmpadas e locations associadas à cena (para execução)
-      lampSelecioned:     (s.lampSelecioned||s.LampSelecioned||[]).map(l=>({
-        lampId:   l.lampId||l.LampId,
-        commands: (l.commands||l.Commands||[]).map(c=>({
+      id:      s.id||s.Id||s._id,
+      name:    s.name||s.Name,
+      desc:    s.description||s.Description||'',
+      active:  s.active??s.Active??false,
+      // devices: [{deviceUserId, commands:[{commandId:int, value}]}]
+      devices: (s.devices||s.Devices||[]).map(d=>({
+        deviceUserId: d.deviceUserId||d.DeviceUserId,
+        commands:     (d.commands||d.Commands||[]).map(c=>({
           commandId: c.commandId||c.CommandId,
-          value:     c.value||c.Value,
+          value:     c.value||c.Value||'',
         })),
       })),
-      locationSelecioned: (s.locationSelecioned||s.LocationSelecioned||[]).map(l=>({
-        locationId: l.locationId||l.LocationId,
-        commands:   (l.commands||l.Commands||[]).map(c=>({
-          commandId: c.commandId||c.CommandId,
-          value:     c.value||c.Value,
-        })),
-      })),
-      _apiId:     s.id||s.Id||s._id,
+      _apiId:  s.id||s.Id||s._id,
     };
   }
 
@@ -128,9 +129,9 @@ const Data = (() => {
     const b = bulbs.find(b=>b.id===id);
     if (!b?._apiId) return b;
     try {
-      const fresh = await Api.lamps.getById(b._apiId);
+      const fresh  = await Api.lamps.getById(b._apiId);
       const mapped = _mapLamp(fresh);
-      mapped.roomId = b.roomId; // mantém o roomId local
+      mapped.roomId = b.roomId;
       Object.assign(b, mapped);
       return b;
     } catch(e) { console.warn('[refreshBulb]', e.message); return b; }
@@ -138,12 +139,17 @@ const Data = (() => {
 
   /* ══════════════════════════════════════════════════════════
      SYNC — envia comando ao backend
-     AGORA USANDO OS NOMES EXATOS DEFINIDOS NO SEU BACKEND
+     CommandId é inteiro (Commands.Id) resolvido via _commandIds
   ══════════════════════════════════════════════════════════ */
   async function _sendCmd(bulb, commandName, value) {
-    if (!bulb._apiId || !commandName) return;
+    if (!bulb._apiId) return;
+    const cmdId = bulb._commandIds?.[commandName];
+    if (cmdId == null) {
+      console.warn(`[Sync] Comando "${commandName}" não encontrado para ${bulb.name}`);
+      return;
+    }
     try {
-      await Api.lamps.command(bulb._apiId, commandName, String(value));
+      await Api.lamps.command(bulb._apiId, cmdId, String(value));
       logCommand(`${bulb.name} → ${commandName}: ${value}`);
     } catch(e) {
       console.error(`[Sync] ${commandName}:`, e.message);
@@ -151,41 +157,28 @@ const Data = (() => {
     }
   }
 
-  function _syncToggle(bulb) {
-    // O backend espera o comando "on" ou "off"
-    const cmd = bulb.on ? 'on' : 'off';
-    _sendCmd(bulb, cmd, cmd);
-  }
-
-  function _syncBrightness(bulb) {
-    _sendCmd(bulb, 'setBrightness', bulb.brightness);
-  }
-
-  function _syncColor(bulb) {
-    _sendCmd(bulb, 'setColor', bulb.color);
-  }
-
-  function _syncTemp(bulb) {
-    _sendCmd(bulb, 'setColorTemperature', bulb.temp);
-  }
+  function _syncToggle(bulb)     { _sendCmd(bulb, bulb.on ? 'on' : 'off', bulb.on ? 'on' : 'off'); }
+  function _syncBrightness(bulb) { _sendCmd(bulb, 'setBrightness', bulb.brightness); }
+  function _syncColor(bulb)      { _sendCmd(bulb, 'setColor', bulb.color); }
+  function _syncTemp(bulb)       { _sendCmd(bulb, 'setColorTemperature', bulb.temp); }
 
   /* ══════════════════════════════════════════════════════════
      ROOMS CRUD
+     create: POST /api/Locations com FormData { name }
+     update: PUT  /api/Locations/{id} com JSON { name }
   ══════════════════════════════════════════════════════════ */
-  async function addRoom(name, icon) {
-    const res  = await Api.locations.create(name, icon||'');
-    const loc  = res.location||res;
-    const room = _mapRoom(loc);
-    room.icon  = icon||'bulb';
+  async function addRoom(name) {
+    const res  = await Api.locations.create(name);
+    const room = _mapRoom(res.location||res);
     rooms.push(room);
     return room;
   }
 
-  async function editRoom(id, name, icon) {
+  async function editRoom(id, name) {
     const r = rooms.find(r=>r.id===id);
     if (!r) return;
-    await Api.locations.update(r._apiId||id, name, icon||r.icon||'');
-    r.name=name; r.icon=icon||r.icon;
+    await Api.locations.update(r._apiId||id, name);
+    r.name = name;
   }
 
   async function deleteRoom(id) {
@@ -197,23 +190,28 @@ const Data = (() => {
 
   /* ══════════════════════════════════════════════════════════
      BULBS CRUD
+     create: POST /api/DevicesUsers { name, deviceId:1, idLocation }
+     configure: PUT /api/DevicesUsers/{id}/configure { name, locationId }
   ══════════════════════════════════════════════════════════ */
-  async function addBulb(name, roomId, ico) {
-    const createRes = await Api.lamps.create();
-    const lampData  = createRes.lamp||createRes;
-    const lampId    = lampData.id||lampData.Id||lampData._id;
-    if (!lampId) throw new Error('Backend não retornou ID da lâmpada.');
+  async function addBulb(name, roomId) {
+    const room   = rooms.find(r=>r.id===roomId);
+    const locId  = room?._apiId ? Number(room._apiId) : null;
 
-    const room       = rooms.find(r=>r.id===roomId);
-    const locationId = room?._apiId||'';
-    await Api.lamps.configure(lampId, name, locationId, ico||'');
+    // Cria o dispositivo (deviceId:1 = ESP32 Ilumix — único tipo suportado)
+    const createRes = await Api.lamps.create(name, locId);
+    // Resposta: { message, fiwareId }
+    const fiwareId  = createRes.fiwareId || createRes.FiwareId;
 
-    let fullLamp;
-    try { fullLamp = await Api.lamps.getById(lampId); } catch { fullLamp = lampData; }
+    // Busca todos os devices e encontra o recém-criado pelo fiwareId
+    const allDevices = await Api.lamps.getAll();
+    const newDevice  = allDevices.find(d =>
+      (d.idFiware||d.IdFiware||d.idFiware) === fiwareId
+    ) || allDevices[allDevices.length - 1]; // fallback: último cadastrado
 
-    const bulb = _mapLamp(fullLamp);
-    bulb.roomId = roomId;
-    bulb.name   = name;
+    if (!newDevice) throw new Error('Não foi possível confirmar o cadastro da lâmpada.');
+
+    const bulb   = _mapLamp(newDevice);
+    bulb.roomId  = roomId;
     bulbs.push(bulb);
     return bulb;
   }
@@ -224,11 +222,12 @@ const Data = (() => {
     bulbs = bulbs.filter(b=>b.id!==id);
   }
 
-  async function renameBulb(id, name, roomId, ico) {
+  async function renameBulb(id, name, roomId) {
     const b    = bulbs.find(b=>b.id===id);
     if (!b) return;
     const room = rooms.find(r=>r.id===roomId);
-    await Api.lamps.configure(b._apiId||id, name, room?._apiId||'', ico||'');
+    const locId = room?._apiId ? Number(room._apiId) : null;
+    await Api.lamps.configure(b._apiId||id, name, locId);
     b.name=name; b.roomId=roomId;
   }
 
@@ -246,36 +245,49 @@ const Data = (() => {
 
   /* ══════════════════════════════════════════════════════════
      SCENES CRUD + ACTIVATE
+     POST /api/Scenes { name, description, devices:[{deviceUserId, commands:[{commandId:int, value}]}] }
+     POST /api/Scenes/{id}/activate — backend envia os comandos para o Fiware
   ══════════════════════════════════════════════════════════ */
-  function buildLampSelecioned(lampIds, locationIds, brightness, temp, color) {
+
+  function _buildDevices(lampIds, locationIds, brightness, temp, color) {
     const allBulbIds = new Set(lampIds||[]);
     (locationIds||[]).forEach(rid => getBulbs(rid).forEach(b=>allBulbIds.add(b.id)));
 
     return [...allBulbIds].map(bid => {
       const b = bulbs.find(b=>b.id===bid);
-      if (!b?._apiId) return null;
-      
-      // COMANDOS EXATOS COMO NO BACKEND:
-      const commands = [
-        { commandId: 'on', value: 'on' },
-        { commandId: 'setBrightness', value: String(brightness) }
-      ];
-      if (color) commands.push({ commandId: 'setColor', value: color });
-      if (temp)  commands.push({ commandId: 'setColorTemperature', value: temp });
+      if (!b?._apiId || !b._commandIds) return null;
 
-      return { lampId: b._apiId, commands };
+      const commands = [];
+      const addCmd = (name, val) => {
+        const id = b._commandIds[name];
+        if (id != null) commands.push({ commandId: id, value: String(val) });
+      };
+
+      addCmd('on', 'on');
+      if (brightness != null) addCmd('setBrightness', brightness);
+      if (color)              addCmd('setColor', color);
+      if (temp)               addCmd('setColorTemperature', temp);
+
+      return { deviceUserId: Number(b._apiId), commands };
     }).filter(Boolean);
   }
 
   async function addScene(d) {
-    const lampSel = buildLampSelecioned(d.lampIds, d.locationIds, d.brightness, d.temp, d.color);
-    const res  = await Api.scenes.create({...d, lampSelecioned:lampSel, locationSelecioned:[]});
-    const sData= res.scene||res;
-    const scene= _mapScene(sData);
-    Object.assign(scene, {
-      name:d.name, icon:d.ico||'scene', desc:d.description||'',
-      brightness:d.brightness, temp:d.temp, color:d.color,
-    });
+    const devices = _buildDevices(d.lampIds, d.locationIds, d.brightness, d.temp, d.color);
+    await Api.scenes.create({ name:d.name, description:d.description||'', devices });
+
+    // Re-busca para pegar o ID real da cena recém-criada
+    try {
+      const allScenes = await Api.scenes.getAll();
+      const fresh = allScenes.find(s=>(s.name||s.Name)===d.name) || allScenes[allScenes.length-1];
+      if (fresh) {
+        const scene = _mapScene(fresh);
+        scenes.push(scene);
+        return scene;
+      }
+    } catch {}
+
+    const scene = { id:uid(), name:d.name, desc:d.description||'', active:false, devices, _apiId:null };
     scenes.push(scene);
     return scene;
   }
@@ -283,10 +295,12 @@ const Data = (() => {
   async function editScene(id, d) {
     const s = scenes.find(s=>s.id===id);
     if (!s) return;
-    const lampSel = buildLampSelecioned(d.lampIds, d.locationIds, d.brightness, d.temp, d.color);
-    await Api.scenes.update(s._apiId||id, {...d, lampSelecioned:lampSel, locationSelecioned:[]});
-    Object.assign(s, { name:d.name, icon:d.ico||s.icon, desc:d.description||s.desc,
-      brightness:d.brightness, temp:d.temp, color:d.color });
+    // O backend não tem PUT para scenes; recria excluindo a antiga
+    if (s._apiId) {
+      try { await Api.scenes.delete(s._apiId); } catch {}
+    }
+    scenes = scenes.filter(s=>s.id!==id);
+    return addScene(d);
   }
 
   async function deleteScene(id) {
@@ -299,51 +313,31 @@ const Data = (() => {
     const s = scenes.find(s=>s.id===id);
     if (!s) return;
 
+    // Backend envia os comandos para o Fiware
     if (s._apiId) {
-      try { await Api.scenes.activate(s._apiId); } catch(e) { console.warn('[scene activate backend]',e.message); }
+      try { await Api.scenes.activate(s._apiId); }
+      catch(e) { console.warn('[scene activate]', e.message); }
     }
 
-    await _executeSceneOnLamps(s);
-
+    // Atualiza estado local da UI
     scenes.forEach(x=>x.active=x.id===id);
-    bulbs.filter(b=>b.on).forEach(b=>{
-      b.brightness=s.brightness; b.color=s.color; b.temp=s.temp;
-    });
+
+    for (const devConfig of (s.devices||[])) {
+      const b = bulbs.find(b=>Number(b._apiId)===devConfig.deviceUserId||b.id===devConfig.deviceUserId);
+      if (!b) continue;
+      b.on = true;
+      for (const cmd of devConfig.commands) {
+        // Resolve nome do comando a partir do mapa reverso
+        const cmdName = Object.keys(b._commandIds||{}).find(k=>b._commandIds[k]===cmd.commandId);
+        if (cmdName === 'on')                    b.on = true;
+        else if (cmdName === 'off')               b.on = false;
+        else if (cmdName === 'setBrightness')     b.brightness = parseInt(cmd.value)||b.brightness;
+        else if (cmdName === 'setColor')          b.color = cmd.value||b.color;
+        else if (cmdName === 'setColorTemperature') b.temp = cmd.value||b.temp;
+      }
+    }
+
     logCommand('Cena ativada: '+s.name, 'App');
-  }
-
-  async function _executeSceneOnLamps(scene) {
-    const allCmds = [];
-
-    if (scene.lampSelecioned?.length) {
-      for (const ls of scene.lampSelecioned) {
-        const b = bulbs.find(b=>b._apiId===ls.lampId||b.id===ls.lampId);
-        if (!b) continue;
-        for (const cmd of ls.commands) {
-          allCmds.push({b, name:cmd.commandId, value:cmd.value});
-        }
-      }
-    } else if (scene.locationSelecioned?.length) {
-      for (const ls of scene.locationSelecioned) {
-        const room = rooms.find(r=>r._apiId===ls.locationId||r.id===ls.locationId);
-        if (!room) continue;
-        for (const b of getBulbs(room.id)) {
-          for (const cmd of ls.commands) allCmds.push({b, name:cmd.commandId, value:cmd.value});
-        }
-      }
-    }
-
-    if (!allCmds.length) {
-      for (const b of bulbs.filter(b=>b.on)) {
-        allCmds.push({b, name:'setBrightness', value:String(scene.brightness)});
-        allCmds.push({b, name:'setColor', value:scene.color});
-        allCmds.push({b, name:'setColorTemperature', value:scene.temp});
-      }
-    }
-
-    for (const {b, name, value} of allCmds) {
-      await _sendCmd(b, name, value);
-    }
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -356,9 +350,9 @@ const Data = (() => {
   }
 
   async function _checkSchedules() {
-    const now  = new Date();
-    const hhmm = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    const dow  = now.getDay(); 
+    const now   = new Date();
+    const hhmm  = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+    const dow   = now.getDay();
     const dayIdx = dow===0 ? 6 : dow-1;
 
     for (const sched of schedules) {
@@ -366,10 +360,8 @@ const Data = (() => {
       if (sched.time !== hhmm) continue;
       if (sched.days && !sched.days[dayIdx]) continue;
       const key = `sched_last_${sched.id}`;
-      const lastRan = sessionStorage.getItem(key);
-      if (lastRan === hhmm) continue;
+      if (sessionStorage.getItem(key)===hhmm) continue;
       sessionStorage.setItem(key, hhmm);
-
       console.log('[Scheduler] Executando:', sched.name, 'às', hhmm);
       await _executeSchedule(sched);
     }
@@ -377,27 +369,17 @@ const Data = (() => {
 
   async function _executeSchedule(sched) {
     try {
-      if (sched.sceneId) {
-        await activateScene(sched.sceneId);
-        logCommand('Rotina: '+sched.name+' → cena ativada', 'Rotina');
-        return;
-      }
-      const targetBulbs =
+      if (sched.sceneId) { await activateScene(sched.sceneId); logCommand('Rotina: '+sched.name+' → cena', 'Rotina'); return; }
+      const targets =
         sched.targetType==='room' ? getBulbs(sched.targetId) :
-        sched.targetType==='bulb' ? bulbs.filter(b=>b.id===sched.targetId) :
-        bulbs;
-
-      for (const b of targetBulbs) {
-        b.on = true;
-        _syncToggle(b);
-      }
+        sched.targetType==='bulb' ? bulbs.filter(b=>b.id===sched.targetId) : bulbs;
+      for (const b of targets) { b.on=true; _syncToggle(b); }
       logCommand('Rotina: '+sched.name, 'Rotina');
-    } catch(e) { console.error('[Scheduler] Erro:', e.message); }
+    } catch(e) { console.error('[Scheduler]', e.message); }
   }
 
-  /* ── Schedules CRUD ── */
   function addSchedule(d)     { const id=Date.now(); schedules.push({id,on:true,...d}); _startScheduler(); return id; }
-  function editSchedule(id,d) { const s=schedules.find(s=>s.id===id); if(s){ Object.assign(s,d); } }
+  function editSchedule(id,d) { const s=schedules.find(s=>s.id===id); if(s) Object.assign(s,d); }
   function deleteSchedule(id) { schedules=schedules.filter(s=>s.id!==id); }
   function toggleSchedule(id) { const s=schedules.find(s=>s.id===id); if(s) s.on=!s.on; }
 
@@ -434,7 +416,7 @@ const Data = (() => {
     get energyHourly()  { return energyHourly; },
 
     uid, getBulbs, roomStats, totalPower, activeBulbs, activeScene, _sendCmd,
-    loadFromApi, refreshBulb, buildLampSelecioned,
+    loadFromApi, refreshBulb, _buildDevices,
 
     addRoom,    editRoom,    deleteRoom,
     addBulb,    deleteBulb,  renameBulb,  toggleBulb,  setBrightness, setColor, setTemp, toggleRoom,

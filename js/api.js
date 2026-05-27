@@ -1,8 +1,8 @@
 /* ============================================================
-   ILUMIX — API Service Layer v3
-   Contrato exato com o backend documentado em cada método.
+   ILUMIX — API Service Layer v4
+   Rotas e DTOs sincronizados com o backend (commit b47c24d).
    ============================================================ */
-const API_BASE_URL = 'http://localhost:5145'; // troque pela URL de produção
+const API_BASE_URL = 'http://localhost:5145';
 
 const Api = (() => {
 
@@ -22,9 +22,10 @@ const Api = (() => {
 
   /* ── Fetch base ──────────────────────────────────────────── */
   async function request(path, opts={}, retry=true) {
-    const token = getToken();
+    const token      = getToken();
+    const isFormData = opts.body instanceof FormData;
     const headers = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(opts.headers||{}),
     };
@@ -58,11 +59,11 @@ const Api = (() => {
     if (!res.ok) { const e = await _json(res); throw new Error(e.message || `Erro ${res.status}`); }
     return _json(res);
   }
-  const GET    = p        => call(p);
-  const POST   = (p,b)   => call(p, { method:'POST',   body: JSON.stringify(b??{}) });
-  const PUT    = (p,b)   => call(p, { method:'PUT',    body: JSON.stringify(b)     });
-  const PATCH  = (p,b)   => call(p, { method:'PATCH',  body: JSON.stringify(b)     });
-  const DELETE = p        => call(p, { method:'DELETE'                              });
+  const GET    = p      => call(p);
+  const POST   = (p,b)  => call(p, { method:'POST',   body: JSON.stringify(b??{}) });
+  const PUT    = (p,b)  => call(p, { method:'PUT',    body: JSON.stringify(b)     });
+  const PATCH  = (p,b)  => call(p, { method:'PATCH',  body: JSON.stringify(b)     });
+  const DELETE = p      => call(p, { method:'DELETE'                               });
 
   /* ══════════════════════════════════════════════════════════
      AUTH
@@ -77,7 +78,6 @@ const Api = (() => {
       const d = await res.json();
       if (!res.ok) throw new Error(d.message||'Email ou senha inválidos.');
       saveTokens(d.accessToken, d.refreshToken);
-      // backend retorna user.Id (maiúsculo) — normalizamos
       const u = { id: d.user.Id||d.user.id, name: d.user.Name||d.user.name, email: d.user.Email||d.user.email };
       saveUser(u); return d;
     },
@@ -95,83 +95,98 @@ const Api = (() => {
   };
 
   /* ══════════════════════════════════════════════════════════
-     LÂMPADAS
-     GET    /api/lamp              → [LampModel]
-     GET    /api/lamp/{id}         → LampModel
-     GET    /api/lamp/{id}/status  → { lampId, name, attributes:{Name:Value} }
-     POST   /api/lamp              → { message, lamp: LampModel }
-       LampModel.Commands = [{CommandId, Name, AttributeRef}]
-       LampModel.Attributes = [{AttributeId, Name, Type, Value}]
-     PUT    /api/lamp/{id}/configure → body: {Name, LocationId, Ico}
-     PATCH  /api/lamp/{id}/command  → body: {commandId:"commandName", value:"value"}
-       OBS: commandId aqui é o NOME do comando, não o GUID
-     DELETE /api/lamp/{id}
+     LÂMPADAS  →  /api/DevicesUsers
+     GET    /api/DevicesUsers        → [DevicesUsersViewModel]
+       Cada item: { id, idDevice, name, idFiware, idLocation, deviceName, commands:[{id,idDevice,name}] }
+     GET    /api/DevicesUsers/{id}   → DevicesUsersViewModel
+     POST   /api/DevicesUsers        → { message, fiwareId }
+       body: { name, deviceId:int, idLocation:int|null }
+       deviceId = tipo de hardware (hardcoded 1 = ESP32 Ilumix)
+     PUT    /api/DevicesUsers/{id}/configure → { message }
+       body: { name, locationId:int|null }
+     PATCH  /api/DevicesUsers/{id}/command  → { message }
+       body: { commandId:int, value:string }
+       commandId = ID inteiro da Commands table (retornado em Commands[].id)
+     DELETE /api/DevicesUsers/{id}
+     GET    /api/DevicesUsers/{id}/historical?lastN=N&attribute=luminosity
   ══════════════════════════════════════════════════════════ */
   const lamps = {
-    getAll:     ()              => GET(`/api/lamp`),
-    getById:    id              => GET(`/api/lamp/${id}`),
-    getStatus:  id              => GET(`/api/lamp/${id}/status`),
-    create:     (deviceId)      => POST(`/api/lamp`, deviceId ? {deviceId} : {}),
-    configure:  (id,name,locationId,ico) =>
-                                   PUT(`/api/lamp/${id}/configure`, {name,locationId:locationId||'',ico:ico||''}),
-    // commandName = Name do comando (ex: "on", "setBrightness", "setColor")
-    // Cor: pode enviar hex (#FF0000) — o backend converte para "255,0,0" para o ESP32
-    command:    (id,commandName,value) =>
-                                   PATCH(`/api/lamp/${id}/command`, {commandId:commandName, value:String(value)}),
-    history:    (id,lastN=20)  => GET(`/api/lamp/${id}/historical/luminosity?lastN=${Number(lastN)}`),
-    delete:     id              => DELETE(`/api/lamp/${id}`),
+    getAll:    ()                      => GET(`/api/DevicesUsers`),
+    getById:   id                      => GET(`/api/DevicesUsers/${id}`),
+
+    // deviceId=1 é o único tipo de hardware Ilumix cadastrado no sistema
+    create:    (name, locationId)      => POST(`/api/DevicesUsers`, {
+                                           name, deviceId: 1, idLocation: locationId || null }),
+
+    configure: (id, name, locationId)  => PUT(`/api/DevicesUsers/${id}/configure`, {
+                                           name, locationId: locationId || null }),
+
+    // commandId deve ser inteiro (Commands.Id) — obtido de device.Commands[]
+    command:   (id, commandId, value)  => PATCH(`/api/DevicesUsers/${id}/command`, {
+                                           commandId, value: String(value) }),
+
+    history:   (id, lastN=20)          => GET(`/api/DevicesUsers/${id}/historical?lastN=${lastN}&attribute=luminosity`),
+    delete:    id                      => DELETE(`/api/DevicesUsers/${id}`),
   };
 
   /* ══════════════════════════════════════════════════════════
-     LOCALIZAÇÕES (CÔMODOS)
-     GET    /api/location         → [LocationModel]
-     GET    /api/location/{id}    → LocationModel
-     POST   /api/location         → body:{Name,Ico} → {message,location:LocationModel}
-     PUT    /api/location/{id}    → body:{Id,Name,Ico}
-     DELETE /api/location/{id}
+     LOCALIZAÇÕES  →  /api/Locations
+     GET    /api/Locations        → [LocationsViewModel]
+     GET    /api/Locations/{id}   → LocationsViewModel
+     POST   /api/Locations        → multipart/form-data  { Name }
+     PUT    /api/Locations/{id}   → { name }
+     DELETE /api/Locations/{id}
   ══════════════════════════════════════════════════════════ */
   const locations = {
-    getAll:  ()          => GET(`/api/location`),
-    getById: id          => GET(`/api/location/${id}`),
-    create:  (name,ico)  => POST(`/api/location`, {name,ico:ico||''}),
-    update:  (id,name,ico) => PUT(`/api/location/${id}`, {id,name,ico:ico||''}),
-    delete:  id          => DELETE(`/api/location/${id}`),
+    getAll:  ()         => GET(`/api/Locations`),
+    getById: id         => GET(`/api/Locations/${id}`),
+
+    // Endpoint usa [FromForm] — precisa de FormData, não JSON
+    create:  (name)     => {
+      const fd = new FormData();
+      fd.append('name', name);
+      return call(`/api/Locations`, { method:'POST', body: fd });
+    },
+
+    // Agora aceita JSON { name } — ico foi removido do DTO
+    update:  (id, name) => PUT(`/api/Locations/${id}`, { name }),
+    delete:  id         => DELETE(`/api/Locations/${id}`),
   };
 
   /* ══════════════════════════════════════════════════════════
-     CENAS
-     GET    /api/scene         → [SceneModel]
-     GET    /api/scene/{id}    → SceneModel
-     POST   /api/scene         → body:{Name,Description,Ico,Brightness,Temp,Color}
-     PUT    /api/scene/{id}    → body:{Name,Description,Ico,Brightness,Temp,Color}
-     POST   /api/scene/{id}/activate
-     DELETE /api/scene/{id}
+     CENAS  →  /api/Scenes
+     GET    /api/Scenes/my-scenes   → [ScenesViewModel]
+       Cada item: { id, idUser, name, description, active, devices:[{deviceUserId, commands:[{commandId,value}]}] }
+     POST   /api/Scenes             → { message }
+       body: { name, description, devices:[{deviceUserId, commands:[{commandId,value}]}] }
+     POST   /api/Scenes/{id}/activate → { message }
+     DELETE /api/Scenes/{id}
   ══════════════════════════════════════════════════════════ */
   const scenes = {
-    getAll:   ()       => GET(`/api/scene`),
-    getById:  id       => GET(`/api/scene/${id}`),
-    create:  (d)       => POST(`/api/scene`, {
-      name:d.name, description:d.description||'', ico:d.ico||'',
-      brightness:d.brightness||80, temp:d.temp||'2700K', color:d.color||'#E2B84A' }),
-    update:  (id,d)    => PUT(`/api/scene/${id}`, {
-      name:d.name, description:d.description||'', ico:d.ico||'',
-      brightness:d.brightness||80, temp:d.temp||'2700K', color:d.color||'#E2B84A' }),
-    activate: id       => POST(`/api/scene/${id}/activate`),
-    delete:   id       => DELETE(`/api/scene/${id}`),
+    getAll:   ()     => GET(`/api/Scenes/my-scenes`),
+    getById:  id     => GET(`/api/Scenes/${id}`),
+
+    create:   (d)    => POST(`/api/Scenes`, {
+                          name:        d.name,
+                          description: d.description || '',
+                          devices:     d.devices || [],
+                        }),
+
+    activate: id     => POST(`/api/Scenes/${id}/activate`),
+    delete:   id     => DELETE(`/api/Scenes/${id}`),
   };
 
   /* ══════════════════════════════════════════════════════════
-     USUÁRIO
-     POST /api/user/register
-     PUT  /api/user/{id}/update-email   → body:{newEmail}
-     PUT  /api/user/{id}/change-password → body:{currentPassword,newPassword,confirmNewPassword}
-     DELETE /api/user/{id}
+     USUÁRIO  →  /api/Users
+     PUT  /api/Users/{id}/update-email    → { message }
+     PUT  /api/Users/{id}/change-password → { message }
+     DELETE /api/Users/{id}
   ══════════════════════════════════════════════════════════ */
   const user = {
-    updateEmail:     (id,newEmail)                               => PUT(`/api/user/${id}/update-email`,    {newEmail}),
-    changePassword:  (id,currentPassword,newPassword,confirmNewPassword) =>
-                       PUT(`/api/user/${id}/change-password`, {currentPassword,newPassword,confirmNewPassword}),
-    delete:          id => DELETE(`/api/user/${id}`),
+    updateEmail:    (id, newEmail)                                    => PUT(`/api/Users/${id}/update-email`, {newEmail}),
+    changePassword: (id, currentPassword, newPassword, confirmNewPassword) =>
+                      PUT(`/api/Users/${id}/change-password`, {currentPassword, newPassword, confirmNewPassword}),
+    delete:         id => DELETE(`/api/Users/${id}`),
   };
 
   return { auth, lamps, locations, scenes, user, requireAuth, getUser, saveUser, clearTokens };

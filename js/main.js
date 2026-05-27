@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   Router.register('wifi',      WifiPage.render);
   Router.register('account',   AccountPage.render);
 
+  /* ── Inicializa controles da página WiFi ── */
+  WifiPage.init();
+
   /* ── Navegação ── */
   document.querySelectorAll('[data-nav]').forEach(el => {
     Router.bindNav(el, el.dataset.nav);

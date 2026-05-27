@@ -284,12 +284,12 @@ const RoomsPage = (() => {
         .map(cb=>cb.dataset.lamp);
       btn.disabled=true; btn.textContent='Criando...';
       try {
-        const room = await Data.addRoom(name,'bulb');
+        const room = await Data.addRoom(name);
         selRoom = room.id;
         // Associa as lâmpadas selecionadas
         for (const lampApiId of selLampIds) {
           const b = Data.bulbs.find(b=>b._apiId===lampApiId||b.id===lampApiId);
-          if (b) { await Api.lamps.configure(lampApiId, b.name, room._apiId, ''); b.roomId=room.id; }
+          if (b) { await Api.lamps.configure(lampApiId, b.name, room._apiId); b.roomId=room.id; }
         }
         toast(`Cômodo "${name}" criado com ${selLampIds.length} lâmpada${selLampIds.length!==1?'s':''}!`);
         Modal.close();
@@ -319,7 +319,7 @@ const RoomsPage = (() => {
       const name=document.getElementById('m-room-name').value.trim();
       if (!name) { errEl.textContent='Informe o nome.'; errEl.style.display='block'; return; }
       btn.disabled=true; btn.textContent='Salvando...';
-      try { await Data.editRoom(roomId,name,r.icon); toast('Cômodo atualizado!'); Modal.close(); }
+      try { await Data.editRoom(roomId,name); toast('Cômodo atualizado!'); Modal.close(); }
       catch(e) { errEl.textContent=e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar'; }
     });
   }

@@ -3,8 +3,16 @@
    ============================================================ */
 const AccountPage = (() => {
 
+  const PLANS = {
+    starter:     { label: 'Starter',     price: 'Grátis',  sub: 'Até 5 dispositivos' },
+    casa:        { label: 'Casa',         price: 'R$ 29/mês', sub: 'Dispositivos ilimitados' },
+    empresarial: { label: 'Empresarial',  price: 'R$ 99/mês', sub: 'Tudo + suporte prioritário' },
+  };
+
   function render() {
     const user = Api.getUser();
+    const plan = localStorage.getItem('ilumix_plan') || 'starter';
+    const p    = PLANS[plan] || PLANS.starter;
     const el   = document.getElementById('account-content');
     if (!el) return;
 
@@ -18,6 +26,20 @@ const AccountPage = (() => {
           <div style="font-size:16px;font-weight:600;color:var(--text-hi)" id="acc-name">${user?.name || '—'}</div>
           <div style="font-size:12px;color:var(--text-mid);margin-top:2px" id="acc-email">${user?.email || '—'}</div>
           <span class="badge badge--on" style="margin-top:var(--sp-2)">Conta ativa</span>
+        </div>
+      </div>
+
+      <!-- Meu Plano -->
+      <div class="card mb-4">
+        <div class="sec-hdr mb-3">
+          <div class="sec-hdr__title">Meu Plano</div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--sp-3)">
+          <div>
+            <div style="font-size:18px;font-weight:600;color:var(--amber)">${p.label}</div>
+            <div style="font-size:13px;color:var(--text-mid);margin-top:4px">${p.price} · ${p.sub}</div>
+          </div>
+          <button class="btn btn--ghost" id="btn-change-plan" style="flex-shrink:0">Mudar plano</button>
         </div>
       </div>
 
@@ -83,6 +105,96 @@ const AccountPage = (() => {
   }
 
   function bindEvents(user) {
+    /* ── Mudar plano ── */
+    document.getElementById('btn-change-plan').addEventListener('click', () => {
+      let pendingPlan = localStorage.getItem('ilumix_plan') || 'starter';
+
+      function buildModalHtml() {
+        return `
+          <div style="font-size:16px;font-weight:600;color:var(--text-hi);margin-bottom:16px">Escolha seu plano</div>
+          <div class="plan-cards" id="modal-plan-cards">
+            <div class="plan-card${pendingPlan==='starter'?' is-selected':''}" data-plan="starter">
+              <div class="plan-card__name">Starter</div>
+              <div class="plan-card__price">R$ 0<span class="plan-card__period">/mês</span></div>
+              <div class="plan-card__badge">Grátis</div>
+            </div>
+            <div class="plan-card${pendingPlan==='casa'?' is-selected':''}" data-plan="casa">
+              <div class="plan-card__name">Casa</div>
+              <div class="plan-card__price">R$ 29<span class="plan-card__period">/mês</span></div>
+              <div class="plan-card__badge">Popular</div>
+            </div>
+            <div class="plan-card${pendingPlan==='empresarial'?' is-selected':''}" data-plan="empresarial">
+              <div class="plan-card__name">Empresarial</div>
+              <div class="plan-card__price">R$ 99<span class="plan-card__period">/mês</span></div>
+              <div class="plan-card__badge">Sem limites</div>
+            </div>
+          </div>
+          <div class="cc-form${pendingPlan!=='starter'?' is-visible':''}" id="modal-cc-form">
+            <div class="cc-form__header">
+              <div class="cc-form__title">Dados de pagamento</div>
+              <div class="cc-brands"><span class="cc-brand">VISA</span><span class="cc-brand">MASTER</span><span class="cc-brand">ELO</span></div>
+            </div>
+            <div style="margin-bottom:12px">
+              <label style="font-size:12px;color:var(--text-mid);display:block;margin-bottom:6px">Número do cartão</label>
+              <input class="input" id="modal-cc-number" type="text" placeholder="0000 0000 0000 0000" maxlength="19">
+            </div>
+            <div class="cc-row" style="margin-bottom:12px">
+              <div>
+                <label style="font-size:12px;color:var(--text-mid);display:block;margin-bottom:6px">Validade</label>
+                <input class="input" id="modal-cc-expiry" type="text" placeholder="MM/AA" maxlength="5">
+              </div>
+              <div>
+                <label style="font-size:12px;color:var(--text-mid);display:block;margin-bottom:6px">CVV</label>
+                <input class="input" id="modal-cc-cvv" type="text" placeholder="000" maxlength="4">
+              </div>
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text-mid);display:block;margin-bottom:6px">Nome no cartão</label>
+              <input class="input" id="modal-cc-name" type="text" placeholder="Como aparece no cartão">
+            </div>
+            <div class="cc-notice">Dados não armazenados — apenas demonstração.</div>
+          </div>
+          <button class="btn btn--primary btn--full" id="modal-btn-save-plan" style="margin-top:20px" data-modal-close>Salvar plano</button>`;
+      }
+
+      Modal.open(buildModalHtml(), () => {});
+
+      function wireModal() {
+        Modal.getModal().querySelectorAll('.plan-card').forEach(card => {
+          card.addEventListener('click', () => {
+            Modal.getModal().querySelectorAll('.plan-card').forEach(c => c.classList.remove('is-selected'));
+            card.classList.add('is-selected');
+            pendingPlan = card.getAttribute('data-plan');
+            const ccForm = Modal.getModal().querySelector('#modal-cc-form');
+            if (pendingPlan === 'starter') ccForm.classList.remove('is-visible');
+            else ccForm.classList.add('is-visible');
+          });
+        });
+
+        Modal.getModal().querySelector('#modal-cc-number')?.addEventListener('input', function () {
+          var v = this.value.replace(/\D/g, '').slice(0, 16);
+          this.value = v.replace(/(.{4})/g, '$1 ').trim();
+        });
+        Modal.getModal().querySelector('#modal-cc-expiry')?.addEventListener('input', function () {
+          var v = this.value.replace(/\D/g, '').slice(0, 4);
+          if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+          this.value = v;
+        });
+        Modal.getModal().querySelector('#modal-cc-cvv')?.addEventListener('input', function () {
+          this.value = this.value.replace(/\D/g, '').slice(0, 4);
+        });
+
+        Modal.getModal().querySelector('#modal-btn-save-plan')?.addEventListener('click', () => {
+          localStorage.setItem('ilumix_plan', pendingPlan);
+          Modal.close();
+          AccountPage.render();
+          toast('Plano atualizado!');
+        });
+      }
+
+      wireModal();
+    });
+
     /* ── Atualizar e-mail ── */
     document.getElementById('btn-update-email').addEventListener('click', async () => {
       const btn    = document.getElementById('btn-update-email');

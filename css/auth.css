@@ -1,0 +1,1129 @@
+/* ============================================================
+   ILUMIX — Estilos das páginas de autenticação
+   Usado por: login.html e cadastro.html
+   ============================================================ */
+
+/* Layout base das páginas de autenticação */
+body {
+  display: flex;
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* ── PAINEL ESQUERDO ─────────────────────────────────────── */
+.panel-left {
+  width: 48%;
+  background: var(--dark-1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 40px 48px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Gradiente de fundo decorativo */
+.panel-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 30% 60%, rgba(226,184,74,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 40% at 80% 20%, rgba(226,184,74,0.03) 0%, transparent 60%);
+}
+
+/* Grade sutil de linhas decorativas */
+.panel-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(226,184,74,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(226,184,74,0.025) 1px, transparent 1px);
+  background-size: 50px 50px;
+  mask-image: radial-gradient(ellipse 80% 80% at 30% 60%, black 20%, transparent 80%);
+}
+
+/* Orbe decorativo (login) */
+.panel-orb {
+  position: absolute;
+  bottom: -80px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 33%, rgba(226,184,74,0.1), rgba(196,144,32,0.03) 60%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Logo no topo do painel esquerdo */
+.panel-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+  margin-bottom: auto;
+}
+
+.panel-logo a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-logo svg {
+  width: 30px;
+  height: 30px;
+}
+
+.panel-logo-text {
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--text-hi);
+}
+
+.panel-logo-text b {
+  font-weight: 600;
+  color: var(--amber);
+}
+
+/* Conteúdo centralizado verticalmente */
+.panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.panel-eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 16px;
+}
+
+.panel-h1 {
+  font-size: clamp(26px, 3.5vw, 48px);
+  font-weight: 200;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  color: var(--text-hi);
+  margin-bottom: 16px;
+}
+
+.panel-h1 b {
+  font-weight: 600;
+}
+
+.panel-body {
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-mid);
+  line-height: 1.8;
+  max-width: 360px;
+  margin-bottom: 36px;
+}
+
+/* Lista de funcionalidades (login) */
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feat-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.feat-item-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--amber-dim);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--amber);
+}
+
+.feat-item-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.feat-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-hi);
+  margin-bottom: 2px;
+}
+
+.feat-item-body {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-mid);
+}
+
+/* Indicador de passos (cadastro) */
+.steps {
+  display: flex;
+  gap: 0;
+  position: relative;
+}
+
+.steps::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.step-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+.step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--dark-3);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-lo);
+  transition: all 0.3s;
+}
+
+.step-num.done   { background: var(--amber); border-color: var(--amber); color: var(--dark-0); }
+.step-num.active { background: var(--dark-4); border-color: var(--amber); color: var(--amber); }
+
+.step-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-lo);
+  text-align: center;
+  transition: color 0.3s;
+}
+
+.step-label.active { color: var(--amber); }
+.step-label.done   { color: var(--text-mid); }
+
+/* Benefícios (cadastro) */
+.panel-benefits {
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.benefit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--text-mid);
+}
+
+.benefit svg {
+  width: 14px;
+  height: 14px;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+/* ── PAINEL DIREITO (formulário) ─────────────────────────── */
+.panel-right {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 48px;
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+.form-wrap {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px 0;
+}
+
+.form-header {
+  margin-bottom: 28px;
+}
+
+.form-title {
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--text-hi);
+  letter-spacing: -0.5px;
+  margin-bottom: 6px;
+}
+
+.form-title b {
+  font-weight: 600;
+}
+
+.form-sub {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--text-mid);
+}
+
+.form-sub a {
+  color: var(--amber);
+}
+
+/* Barra de progresso (cadastro) */
+.progress-wrap {
+  margin-bottom: 28px;
+}
+
+.progress-bar {
+  height: 2px;
+  background: var(--dark-4);
+  border-radius: 1px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--amber-deep), var(--amber-soft));
+  border-radius: 1px;
+  transition: width 0.4s ease;
+}
+
+.progress-label {
+  font-size: 11px;
+  color: var(--text-lo);
+  margin-top: 6px;
+}
+
+/* Painéis de passo (cadastro) */
+.step-panel          { display: none; }
+.step-panel.is-active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── CAMPOS DE FORMULÁRIO ────────────────────────────────── */
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  margin-bottom: 7px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.field-input-wrap {
+  position: relative;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  background: var(--dark-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 44px 12px 14px;
+  color: var(--text-hi);
+  font-size: 14px;
+  font-family: var(--font);
+  transition: border-color var(--ease), background var(--ease);
+  appearance: none;
+}
+
+.field input::placeholder,
+.field select::placeholder {
+  color: var(--text-lo);
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--border-active);
+  background: var(--dark-3);
+  outline: none;
+}
+
+.field input.is-error,
+.field select.is-error {
+  border-color: var(--red);
+}
+
+.field input.is-ok {
+  border-color: rgba(91, 173, 106, 0.5);
+}
+
+.field input[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ícone dentro do campo */
+.field-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-lo);
+  pointer-events: none;
+}
+
+.field-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Botão de mostrar/ocultar senha */
+.field-eye {
+  pointer-events: all;
+  cursor: pointer;
+  transition: color var(--ease);
+}
+
+.field-eye:hover {
+  color: var(--text-mid);
+}
+
+/* Mensagem de erro abaixo do campo */
+.field-error {
+  font-size: 11px;
+  color: var(--red);
+  margin-top: 5px;
+  display: none;
+}
+
+.field-error.is-visible {
+  display: block;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--text-lo);
+  margin-top: 4px;
+}
+
+/* Status de busca de CEP */
+.field-cep-status {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-mid);
+  margin-top: 5px;
+}
+
+.field-cep-status.is-visible {
+  display: flex;
+}
+
+/* Bloco de endereço preenchido automaticamente */
+.address-block {
+  background: var(--dark-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 14px;
+  display: none;
+}
+
+.address-block.is-visible {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+.address-block-title {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.address-block-title svg {
+  width: 12px;
+  height: 12px;
+  color: var(--green);
+}
+
+.addr-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-mid);
+}
+
+.addr-row:last-child {
+  margin-bottom: 0;
+}
+
+.addr-key {
+  min-width: 70px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: var(--text-lo);
+}
+
+.addr-val {
+  color: var(--text-hi);
+  font-weight: 400;
+}
+
+/* Manual address fields toggle */
+.address-manual {
+  display: none;
+  margin-top: 14px;
+}
+
+.address-manual.is-visible {
+  display: block;
+}
+
+/* Indicador de força da senha */
+.pw-strength {
+  display: none;
+  margin-top: 8px;
+}
+
+.pw-strength.is-visible {
+  display: block;
+}
+
+.pw-strength-bar {
+  height: 3px;
+  background: var(--dark-4);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 5px;
+}
+
+.pw-strength-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s, background 0.3s;
+}
+
+.pw-strength-label {
+  font-size: 11px;
+}
+
+/* Link "esqueceu a senha" */
+.forgot {
+  text-align: right;
+  margin-top: -6px;
+  margin-bottom: 18px;
+}
+
+.forgot a {
+  font-size: 12px;
+  color: var(--text-mid);
+  transition: color var(--ease);
+}
+
+.forgot a:hover {
+  color: var(--amber);
+}
+
+/* Aceite dos termos */
+.terms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 18px;
+  margin-bottom: 18px;
+  cursor: pointer;
+}
+
+.terms-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--amber);
+  flex-shrink: 0;
+  margin-top: 1px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.terms-check span {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-mid);
+  line-height: 1.6;
+}
+
+.terms-check a {
+  color: var(--amber);
+}
+
+/* ── BOTÕES ──────────────────────────────────────────────── */
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  background: var(--amber);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark-0);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.btn-submit:hover {
+  background: var(--amber-soft);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(226, 184, 74, 0.2);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+.btn-submit.is-loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Navegação entre passos */
+.form-nav {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn-back {
+  flex: 1;
+  padding: 12px;
+  background: var(--dark-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-mid);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--ease);
+}
+
+.btn-back:hover {
+  border-color: var(--border-hover);
+  color: var(--text-hi);
+}
+
+.btn-next {
+  flex: 2;
+  padding: 12px;
+  background: var(--amber);
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark-0);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-next:hover {
+  background: var(--amber-soft);
+}
+
+.btn-next.is-loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Separador "ou continue com" */
+.divider-text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.divider-text::before,
+.divider-text::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.divider-text span {
+  font-size: 11px;
+  color: var(--text-lo);
+  white-space: nowrap;
+}
+
+.btn-social {
+  width: 100%;
+  padding: 11px;
+  background: var(--dark-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-mid);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.btn-social:hover {
+  border-color: var(--border-hover);
+  color: var(--text-hi);
+}
+
+/* Rodapé do formulário */
+.form-footer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-mid);
+  margin-top: 24px;
+}
+
+.form-footer a {
+  color: var(--amber);
+  font-weight: 500;
+}
+
+/* ── ESTADOS DE SUCESSO ──────────────────────────────────── */
+.success-msg {
+  display: none;
+  text-align: center;
+  padding: 32px 0;
+}
+
+.success-msg.is-visible {
+  display: block;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--amber-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: var(--amber);
+}
+
+.success-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.success-msg__title {
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--text-hi);
+  margin-bottom: 8px;
+}
+
+.success-msg__sub {
+  font-size: 14px;
+  color: var(--text-mid);
+  margin-bottom: 32px;
+}
+
+.success-screen {
+  display: none;
+  text-align: center;
+  padding: 48px 0;
+}
+
+.success-screen.is-visible {
+  display: block;
+  animation: fadeIn 0.5s ease;
+}
+
+.success-orb {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 33%, var(--amber-soft), var(--amber-deep) 65%);
+  margin: 0 auto 24px;
+  box-shadow: 0 0 32px var(--amber-glow);
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+.success-screen__title {
+  font-size: 24px;
+  font-weight: 300;
+  color: var(--text-hi);
+  margin-bottom: 8px;
+}
+
+.success-screen__sub {
+  font-size: 14px;
+  color: var(--text-mid);
+  margin-bottom: 8px;
+}
+
+.success-screen__hint {
+  font-size: 13px;
+  color: var(--text-lo);
+  margin-bottom: 36px;
+}
+
+/* Caixa de erro da API */
+.api-error {
+  color: var(--red);
+  font-size: 13px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: var(--red-dim);
+  border-radius: 8px;
+  border: 1px solid rgba(181, 96, 96, 0.2);
+}
+
+/* ── UTILITÁRIOS ─────────────────────────────────────────── */
+.is-hidden  { display: none !important; }
+.flex-center { display: flex; justify-content: center; align-items: center; }
+
+/* Variantes do spinner */
+.spinner {
+  border-radius: 50%;
+  border-style: solid;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.spinner--sm    { width: 12px; height: 12px; border-width: 2px; }
+.spinner--md    { width: 16px; height: 16px; border-width: 2px; }
+.spinner--lg    { width: 24px; height: 24px; border-width: 2px; }
+.spinner--amber { border-color: rgba(226,184,74,0.2); border-top-color: var(--amber); }
+.spinner--dark  { border-color: rgba(13,12,7,0.3);   border-top-color: var(--dark-0); }
+
+/* ── MODAL (termos, esqueceu senha — páginas de auth) ────── */
+.auth-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(13,12,7,0.88);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.auth-modal.is-open { display: flex; animation: fadeIn 0.2s ease; }
+
+.auth-modal__box {
+  background: var(--dark-2);
+  border: 1px solid var(--border-hover);
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.auth-modal__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-hi);
+  margin-bottom: 20px;
+  padding-right: 28px;
+}
+
+.auth-modal__close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: var(--text-lo);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0;
+  transition: color var(--ease);
+}
+
+.auth-modal__close:hover { color: var(--text-hi); }
+
+.auth-modal__body {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--text-mid);
+  line-height: 1.8;
+}
+
+.auth-modal__body h3 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-hi);
+  margin: 20px 0 8px;
+}
+
+.auth-modal__body p {
+  margin-bottom: 12px;
+}
+
+.auth-modal__btn {
+  width: 100%;
+  margin-top: 24px;
+  padding: 12px;
+  background: var(--amber);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark-0);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: background var(--ease);
+}
+
+.auth-modal__btn:hover { background: var(--amber-soft); }
+
+/* Aviso "funcionalidade em breve" */
+.auth-modal__info {
+  background: var(--dark-3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.auth-modal__info-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.auth-modal__info-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-hi);
+  margin-bottom: 8px;
+}
+
+.auth-modal__info-text {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.7;
+}
+
+/* ── SELEÇÃO DE PLANO (passo 4 do cadastro) ──────────────── */
+.plan-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.plan-card {
+  background: var(--dark-2);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  position: relative;
+}
+
+.plan-card:hover { border-color: var(--border-hover); }
+
+.plan-card.is-selected {
+  border-color: var(--amber);
+  background: var(--dark-3);
+}
+
+.plan-card.is-selected::after {
+  content: '✓';
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  width: 22px;
+  height: 22px;
+  background: var(--amber);
+  border-radius: 50%;
+  color: var(--dark-0);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plan-card__name {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  margin-bottom: 8px;
+}
+
+.plan-card__price {
+  font-size: 22px;
+  font-weight: 200;
+  color: var(--text-hi);
+  letter-spacing: -0.5px;
+  margin-bottom: 2px;
+}
+
+.plan-card__price b { font-weight: 600; }
+
+.plan-card__period {
+  font-size: 9px;
+  color: var(--text-lo);
+  margin-bottom: 10px;
+  min-height: 12px;
+}
+
+.plan-card__badge {
+  display: inline-block;
+  background: var(--amber);
+  color: var(--dark-0);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* ── CARTÃO DE CRÉDITO ────────────────────────────────────── */
+.cc-form {
+  display: none;
+  margin-top: 16px;
+  padding: 20px;
+  background: var(--dark-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.cc-form.is-visible { display: block; }
+
+.cc-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cc-form__title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+
+.cc-brands {
+  display: flex;
+  gap: 5px;
+}
+
+.cc-brand {
+  padding: 3px 7px;
+  background: var(--dark-4);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-lo);
+  letter-spacing: 0.5px;
+}
+
+.cc-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cc-notice {
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--text-lo);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* ── RESPONSIVO ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .panel-left  { display: none; }
+  .panel-right { padding: 32px 24px; }
+}
+
+@media (max-width: 480px) {
+  .panel-right { padding: 24px 16px; }
+  .field-row   { grid-template-columns: 1fr; }
+}
