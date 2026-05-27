@@ -138,7 +138,7 @@ const Api = (() => {
      DELETE /api/Locations/{id}
   ══════════════════════════════════════════════════════════ */
   const locations = {
-    getAll:  ()         => GET(`/api/Locations`),
+    getAll:  ()         => GET(`/api/Locations/all`),
     getById: id         => GET(`/api/Locations/${id}`),
 
     // Endpoint usa [FromForm] — precisa de FormData, não JSON
