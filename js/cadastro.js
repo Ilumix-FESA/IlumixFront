@@ -288,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var pw2   = document.getElementById('f-password2').value;
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', API_BASE_URL + '/api/user/register');
+    xhr.open('POST', API_BASE_URL + '/api/Users/register');
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onload = function () {

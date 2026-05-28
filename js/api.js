@@ -2,7 +2,7 @@
    ILUMIX — API Service Layer v4
    Rotas e DTOs sincronizados com o backend (commit b47c24d).
    ============================================================ */
-const API_BASE_URL = 'http://localhost:5145';
+const API_BASE_URL = 'http://localhost:5298';
 
 const Api = (() => {
 
@@ -40,7 +40,7 @@ const Api = (() => {
   async function tryRefresh() {
     const rt = getRefreshToken(); if (!rt) return false;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/refresh`,
+      const res = await fetch(`${API_BASE_URL}/api/Auth/refresh`,
         { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rt) });
       if (!res.ok) return false;
       const d = await res.json(); saveTokens(d.accessToken, d.refreshToken); return true;
@@ -72,7 +72,7 @@ const Api = (() => {
   ══════════════════════════════════════════════════════════ */
   const auth = {
     async login(email, password) {
-      const res = await fetch(`${API_BASE_URL}/api/auth/login`,
+      const res = await fetch(`${API_BASE_URL}/api/Auth/login`,
         { method:'POST', headers:{'Content-Type':'application/json'},
           body:JSON.stringify({email,password}) });
       const d = await res.json();
@@ -82,7 +82,7 @@ const Api = (() => {
       saveUser(u); return d;
     },
     async register(name, email, password, confirmPassword) {
-      const res = await fetch(`${API_BASE_URL}/api/user/register`,
+      const res = await fetch(`${API_BASE_URL}/api/Users/register`,
         { method:'POST', headers:{'Content-Type':'application/json'},
           body:JSON.stringify({name,email,password,confirmPassword}) });
       const d = await res.json();
@@ -95,39 +95,37 @@ const Api = (() => {
   };
 
   /* ══════════════════════════════════════════════════════════
-     LÂMPADAS  →  /api/DevicesUsers
-     GET    /api/DevicesUsers        → [DevicesUsersViewModel]
-       Cada item: { id, idDevice, name, idFiware, idLocation, deviceName, commands:[{id,idDevice,name}] }
-     GET    /api/DevicesUsers/{id}   → DevicesUsersViewModel
-     POST   /api/DevicesUsers        → { message, fiwareId }
-       body: { name, deviceId:int, idLocation:int|null }
-       deviceId = tipo de hardware (hardcoded 1 = ESP32 Ilumix)
-     PUT    /api/DevicesUsers/{id}/configure → { message }
-       body: { name, locationId:int|null }
-     PATCH  /api/DevicesUsers/{id}/command  → { message }
-       body: { commandId:int, value:string }
-       commandId = ID inteiro da Commands table (retornado em Commands[].id)
-     DELETE /api/DevicesUsers/{id}
-     GET    /api/DevicesUsers/{id}/historical?lastN=N&attribute=luminosity
+     TIPOS DE DISPOSITIVO  →  /api/Devices
+     GET /api/Devices → [{ id, name }]
   ══════════════════════════════════════════════════════════ */
-  const lamps = {
-    getAll:    ()                      => GET(`/api/DevicesUsers`),
-    getById:   id                      => GET(`/api/DevicesUsers/${id}`),
-
-    // deviceId=1 é o único tipo de hardware Ilumix cadastrado no sistema
-    create:    (name, locationId)      => POST(`/api/DevicesUsers`, {
-                                           name, deviceId: 1, idLocation: locationId || null }),
-
-    configure: (id, name, locationId)  => PUT(`/api/DevicesUsers/${id}/configure`, {
-                                           name, locationId: locationId || null }),
-
-    // commandId deve ser inteiro (Commands.Id) — obtido de device.Commands[]
-    command:   (id, commandId, value)  => PATCH(`/api/DevicesUsers/${id}/command`, {
-                                           commandId, value: String(value) }),
-
-    history:   (id, lastN=20)          => GET(`/api/DevicesUsers/${id}/historical?lastN=${lastN}&attribute=luminosity`),
-    delete:    id                      => DELETE(`/api/DevicesUsers/${id}`),
+  const deviceTypes = {
+    getAll:       ()     => GET(`/api/Devices`),
+    getAttributes: deviceId => GET(`/api/Devices/${deviceId}/attributes`),
   };
+
+  /* ══════════════════════════════════════════════════════════
+     DISPOSITIVOS DO USUÁRIO  →  /api/DevicesUsers
+     POST → { message, id, fiwareId, deviceName }
+  ══════════════════════════════════════════════════════════ */
+  const devices = {
+    getAll:    ()                              => GET(`/api/DevicesUsers`),
+    getById:   id                              => GET(`/api/DevicesUsers/${id}`),
+
+    create:    (name, locationId, deviceId=1) => POST(`/api/DevicesUsers`, {
+                   name, deviceId, idLocation: locationId ?? null }),
+
+    configure: (id, name, locationId)         => PUT(`/api/DevicesUsers/${id}/configure`, {
+                   name, locationId: locationId ?? null }),
+
+    command:   (id, commandId, value)         => PATCH(`/api/DevicesUsers/${id}/command`, {
+                   commandId, value: String(value) }),
+
+    history:   (id, lastN=20, attribute='luminosity') =>
+                   GET(`/api/DevicesUsers/${id}/historical?lastN=${lastN}&attribute=${encodeURIComponent(attribute)}`),
+    delete:    id                              => DELETE(`/api/DevicesUsers/${id}`),
+  };
+
+  const lamps = devices;
 
   /* ══════════════════════════════════════════════════════════
      LOCALIZAÇÕES  →  /api/Locations
@@ -141,14 +139,14 @@ const Api = (() => {
     getAll:  ()         => GET(`/api/Locations/all`),
     getById: id         => GET(`/api/Locations/${id}`),
 
-    // Endpoint usa [FromForm] — precisa de FormData, não JSON
-    create:  (name)     => {
+    // POST multipart: name (obrigatório), imagem (opcional, máx. 2 MB)
+    create:  (name, imageFile = null) => {
       const fd = new FormData();
       fd.append('name', name);
+      if (imageFile) fd.append('imagem', imageFile);
       return call(`/api/Locations`, { method:'POST', body: fd });
     },
 
-    // Agora aceita JSON { name } — ico foi removido do DTO
     update:  (id, name) => PUT(`/api/Locations/${id}`, { name }),
     delete:  id         => DELETE(`/api/Locations/${id}`),
   };
@@ -189,5 +187,38 @@ const Api = (() => {
     delete:         id => DELETE(`/api/Users/${id}`),
   };
 
-  return { auth, lamps, locations, scenes, user, requireAuth, getUser, saveUser, clearTokens };
+  /* ══════════════════════════════════════════════════════════
+     ROTINAS  →  /api/Schedules
+     GET    /api/Schedules/my-schedules  → [SchedulesViewModel]
+     POST   /api/Schedules              → { message, id, awsScheduled, awsError }
+     PUT    /api/Schedules/{id}         → { message, awsScheduled, awsError }
+     DELETE /api/Schedules/{id}         → { message }
+     PATCH  /api/Schedules/{id}/toggle  → { message, isEnabled }
+  ══════════════════════════════════════════════════════════ */
+  const schedules = {
+    getAll: () => GET('/api/Schedules/my-schedules'),
+
+    create: d => POST('/api/Schedules', {
+      name:       d.name,
+      time:       d.time,
+      days:       d.days,
+      sceneId:    d.sceneId  ? parseInt(d.sceneId,  10) : null,
+      targetType: d.targetType || 'all',
+      targetId:   d.targetId ? parseInt(d.targetId, 10) : null,
+    }),
+
+    update: (id, d) => PUT(`/api/Schedules/${id}`, {
+      name:       d.name,
+      time:       d.time,
+      days:       d.days,
+      sceneId:    d.sceneId  ? parseInt(d.sceneId,  10) : null,
+      targetType: d.targetType || 'all',
+      targetId:   d.targetId ? parseInt(d.targetId, 10) : null,
+    }),
+
+    delete: id => DELETE(`/api/Schedules/${id}`),
+    toggle: id => PATCH(`/api/Schedules/${id}/toggle`),
+  };
+
+  return { auth, devices, lamps, deviceTypes, locations, scenes, schedules, user, requireAuth, getUser, saveUser, clearTokens };
 })();

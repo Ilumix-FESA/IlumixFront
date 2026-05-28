@@ -152,7 +152,7 @@ const CommandsPage = (() => {
           <option value="all_off"${vc.action==='all_off'?' selected':''}>Desligar todas</option>
           <option value="all_on"${vc.action==='all_on'?' selected':''}>Ligar todas</option>
           <option value="toggle_room"${vc.action==='toggle_room'?' selected':''}>Alternar cômodo</option>
-          <option value="toggle_bulb"${vc.action==='toggle_bulb'?' selected':''}>Alternar lâmpada</option>
+          <option value="toggle_bulb"${vc.action==='toggle_bulb'?' selected':''}>Alternar dispositivo</option>
           <option value="scene"${vc.action==='scene'?' selected':''}>Ativar cena</option>
         </select>
       </div>

@@ -1,11 +1,123 @@
 /* ============================================================
    ILUMIX — Rooms page
-   Cômodos apenas AGRUPAM lâmpadas já cadastradas.
-   Para registrar/controlar lâmpadas, use a página "Lâmpadas".
+   Cômodos apenas AGRUPAM dispositivos já cadastrados.
+   Para registrar/controlar dispositivos, use a página "Dispositivos".
 ============================================================ */
 const RoomsPage = (() => {
 
   let selRoom = null;
+
+  const _sameId = (a, b) => String(a) === String(b);
+
+  function _findRoom(id) {
+    return Data.rooms.find(r => _sameId(r.id, id));
+  }
+
+  function _roomThumb(r, size = 32) {
+    if (r.imageUrl) {
+      return `<img src="${r.imageUrl}" alt="" class="room-thumb" style="width:${size}px;height:${size}px">`;
+    }
+    return `<div class="room-thumb room-thumb--icon" style="width:${size}px;height:${size}px">
+      ${roomIcon(r.icon, Math.round(size * 0.5))}</div>`;
+  }
+
+  /** free | here | other — cada dispositivo só pode estar em um cômodo */
+  function _devicePlacement(b, roomId) {
+    if (!b.roomId) return 'free';
+    if (roomId != null && roomId !== '' && _sameId(b.roomId, roomId)) return 'here';
+    return 'other';
+  }
+
+  function _devicePickerHtml(roomId, mode) {
+    if (!Data.bulbs.length) {
+      return `<div style="color:var(--text-lo);font-size:11px;padding:10px;background:var(--dark-3);
+                border-radius:8px;text-align:center">
+        Nenhum dispositivo cadastrado.<br>
+        <span style="color:var(--amber);cursor:pointer" id="m-go-devices">Cadastrar em Dispositivos →</span>
+      </div>`;
+    }
+
+    const selectable = Data.bulbs.filter(b => {
+      const p = _devicePlacement(b, roomId);
+      return mode === 'create' ? p === 'free' : (p === 'free' || p === 'here');
+    });
+    const blocked = mode === 'manage'
+      ? Data.bulbs.filter(b => _devicePlacement(b, roomId) === 'other')
+      : Data.bulbs.filter(b => _devicePlacement(b, roomId) === 'other');
+
+    let html = '';
+
+    if (mode === 'create' && blocked.length) {
+      html += `<p style="font-size:10px;color:var(--text-lo);margin-bottom:8px;line-height:1.4">
+        ${blocked.length} dispositivo(s) já estão em outro cômodo e não podem ser adicionados aqui.
+        Remova-os do outro cômodo antes, ou use <strong>Gerenciar</strong> no cômodo de destino para movê-los.
+      </p>`;
+    }
+
+    if (!selectable.length && mode === 'create') {
+      html += `<p style="font-size:11px;color:var(--text-lo);padding:8px 0">
+        Não há dispositivos disponíveis (todos já pertencem a um cômodo).
+      </p>`;
+    } else if (selectable.length) {
+      html += `<div class="device-picker-list" id="room-lamp-checks">
+        ${selectable.map(b => {
+          const checked = mode === 'manage' && _devicePlacement(b, roomId) === 'here';
+          return `
+            <label class="device-picker-row${checked ? ' is-selected' : ''}">
+              <input type="checkbox" data-device-key="${b._apiId}" ${checked ? 'checked' : ''}>
+              <span class="device-picker-dot" style="background:${b.on ? b.color : '#444'}"></span>
+              <span class="device-picker-name">${b.name}</span>
+              ${checked ? '<span class="device-picker-tag device-picker-tag--here">neste cômodo</span>' : ''}
+            </label>`;
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button type="button" class="btn btn--ghost btn--sm" id="m-sel-all">Marcar disponíveis</button>
+        <button type="button" class="btn btn--ghost btn--sm" id="m-sel-none">Limpar</button>
+      </div>`;
+    }
+
+    if (mode === 'manage' && blocked.length) {
+      html += `<p style="font-size:10px;color:var(--text-lo);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.5px">
+        Em outros cômodos (não podem ser adicionados aqui)
+      </p>
+      <div class="device-picker-list device-picker-list--blocked">
+        ${blocked.map(b => {
+          const otherName = _findRoom(b.roomId)?.name || 'outro cômodo';
+          return `<div class="device-picker-row device-picker-row--disabled">
+            <span class="device-picker-dot" style="background:${b.on ? b.color : '#444'};opacity:.5"></span>
+            <span class="device-picker-name">${b.name}</span>
+            <span class="device-picker-tag">em: ${otherName}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+
+    return html;
+  }
+
+  function _bindDevicePicker() {
+    document.getElementById('m-go-devices')?.addEventListener('click', () => {
+      Modal.close(); Router.navigate('devices');
+    });
+    document.getElementById('m-sel-all')?.addEventListener('click', () => {
+      document.querySelectorAll('#room-lamp-checks input').forEach(cb => {
+        cb.checked = true;
+        cb.closest('label')?.classList.add('is-selected');
+      });
+    });
+    document.getElementById('m-sel-none')?.addEventListener('click', () => {
+      document.querySelectorAll('#room-lamp-checks input').forEach(cb => {
+        cb.checked = false;
+        cb.closest('label')?.classList.remove('is-selected');
+      });
+    });
+    document.querySelectorAll('#room-lamp-checks input').forEach(cb => {
+      cb.addEventListener('change', () => {
+        cb.closest('label')?.classList.toggle('is-selected', cb.checked);
+      });
+    });
+  }
 
   function render() {
     if (!selRoom && Data.rooms.length) selRoom = Data.rooms[0].id;
@@ -36,19 +148,15 @@ const RoomsPage = (() => {
       const s     = Data.roomStats(r.id);
       const lamps = Data.getBulbs(r.id);
       return `
-        <div class="room-card${s.active?' is-on':''}${r.id===selRoom?' is-selected-room':''}"
+        <div class="room-card${s.active?' is-on':''}${_sameId(r.id, selRoom)?' is-selected-room':''}"
              data-room="${r.id}">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-            <div style="width:30px;height:30px;border-radius:6px;
-                        background:#E2B84A22;display:flex;align-items:center;
-                        justify-content:center;color:#E2B84A;flex-shrink:0">
-              ${roomIcon(r.icon,16)}
-            </div>
+            ${_roomThumb(r, 36)}
             <div style="flex:1;min-width:0">
               <div style="font-size:12px;font-weight:600;color:var(--text-hi);
                            overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.name}</div>
               <div style="font-size:10px;color:var(--text-lo)">
-                ${lamps.length} lâmpada${lamps.length!==1?'s':''} · ${s.active} acesa${s.active!==1?'s':''}
+                ${lamps.length} dispositivo${lamps.length!==1?'s':''} · ${s.active} acesa${s.active!==1?'s':''}
               </div>
             </div>
             <div style="display:flex;gap:4px">
@@ -84,12 +192,12 @@ const RoomsPage = (() => {
     el.querySelectorAll('.btn-del-room').forEach(b => {
       b.addEventListener('click', async e => {
         e.stopPropagation();
-        const r = Data.rooms.find(r=>r.id===b.dataset.room);
-        if (!confirm(`Excluir "${r?.name}"? As lâmpadas ficarão sem cômodo.`)) return;
+        const r = _findRoom(b.dataset.room);
+        if (!confirm(`Excluir "${r?.name}"? Os dispositivos ficarão sem cômodo.`)) return;
         b.disabled = true;
         try {
           await Data.deleteRoom(b.dataset.room);
-          if (selRoom===b.dataset.room) selRoom = Data.rooms[0]?.id||null;
+          if (_sameId(selRoom, b.dataset.room)) selRoom = Data.rooms[0]?.id || null;
           toast('Cômodo excluído'); render();
         } catch(e) { toast('❌ '+e.message); b.disabled=false; }
       });
@@ -98,13 +206,13 @@ const RoomsPage = (() => {
   }
 
   /* ══════════════════════════════════════════════════════════
-     DETALHE DO CÔMODO — lâmpadas + controles rápidos
+     DETALHE DO CÔMODO — dispositivos + controles rápidos
   ══════════════════════════════════════════════════════════ */
   function _renderRoomDetail() {
     const el = document.getElementById('bulb-detail');
     if (!el) return;
 
-    const r = Data.rooms.find(r=>r.id===selRoom);
+    const r = _findRoom(selRoom);
     if (!r) {
       el.innerHTML = `<div style="color:var(--text-lo);font-size:12px;padding:var(--sp-5);text-align:center">Selecione um cômodo</div>`;
       return;
@@ -114,12 +222,18 @@ const RoomsPage = (() => {
     const stats = Data.roomStats(r.id);
 
     el.innerHTML = `
-      <!-- Header -->
+      ${r.imageUrl ? `
+        <div class="room-detail-hero" style="margin:-4px -4px 14px;border-radius:var(--r-md);overflow:hidden;height:120px">
+          <img src="${r.imageUrl}" alt="${r.name}" style="width:100%;height:100%;object-fit:cover">
+        </div>` : ''}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-        <div>
-          <div style="font-size:15px;font-weight:600;color:var(--text-hi)">${r.name}</div>
-          <div style="font-size:11px;color:var(--text-lo);margin-top:2px">
-            ${lamps.length} lâmpada${lamps.length!==1?'s':''} · ${stats.power}W
+        <div style="display:flex;align-items:center;gap:10px">
+          ${!r.imageUrl ? _roomThumb(r, 40) : ''}
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--text-hi)">${r.name}</div>
+            <div style="font-size:11px;color:var(--text-lo);margin-top:2px">
+              ${lamps.length} dispositivo${lamps.length!==1?'s':''} · ${stats.active} ligado${stats.active!==1?'s':''}
+            </div>
           </div>
         </div>
         <div style="display:flex;gap:6px">
@@ -130,7 +244,7 @@ const RoomsPage = (() => {
         </div>
       </div>
 
-      <!-- Lâmpadas do cômodo -->
+      <!-- Dispositivos do cômodo -->
       ${lamps.length ? lamps.map(b => `
         <div style="display:flex;align-items:center;gap:10px;
                     padding:10px;background:var(--dark-3);border-radius:8px;margin-bottom:6px">
@@ -149,15 +263,14 @@ const RoomsPage = (() => {
         </div>`).join('') : `
         <div style="text-align:center;padding:var(--sp-5);background:var(--dark-3);
                     border-radius:8px;color:var(--text-lo);font-size:12px">
-          Nenhuma lâmpada neste cômodo.<br>
+          Nenhum dispositivo neste cômodo.<br>
           <span style="font-size:11px;opacity:.7">Clique em "Gerenciar" para adicionar.</span>
         </div>`}
 
-      <!-- Modo festa -->
       ${lamps.length ? `
         <button class="btn btn--ghost btn--full" id="btn-party"
           style="margin-top:10px;${Data.isParty(r.id)?'border-color:var(--amber);color:var(--amber)':''}">
-          ${Data.isParty(r.id)?'✕ Parar modo festa':'🎉 Modo Festa'}
+          ${Data.isParty(r.id)?'✕ Parar modo festa':'🎉 Modo festa'}
         </button>
       ` : ''}`;
 
@@ -175,15 +288,15 @@ const RoomsPage = (() => {
       });
     });
 
-    // "Controlar →" navega para a página Lâmpadas com a lâmpada selecionada
+    // "Controlar →" navega para Dispositivos com o item selecionado
     el.querySelectorAll('.btn-go-lamp').forEach(b=>{
       b.addEventListener('click', ()=>{
-        // Navega para a página Lâmpadas e seleciona essa lâmpada
-        Router.navigate('lamps');
+        Router.navigate('devices');
         // Pequeno delay para a página renderizar
         setTimeout(()=>{
-          const event = new CustomEvent('selectLamp', { detail: { id: b.dataset.lamp } });
-          document.dispatchEvent(event);
+          const detail = { id: b.dataset.lamp };
+          document.dispatchEvent(new CustomEvent('selectDevice', { detail }));
+          document.dispatchEvent(new CustomEvent('selectLamp', { detail }));
         }, 100);
       });
     });
@@ -208,54 +321,28 @@ const RoomsPage = (() => {
   }
 
   /* ══════════════════════════════════════════════════════════
-     MODAL — CRIAR CÔMODO (seleciona lâmpadas existentes)
+     MODAL — CRIAR CÔMODO (seleciona dispositivos existentes)
   ══════════════════════════════════════════════════════════ */
   function _openAddRoom() {
-    const freeBulbs = Data.bulbs.filter(b=>!b.roomId);
     Modal.open(`
       <div class="modal__title">Novo Cômodo</div>
 
       <div class="input-wrap">
         <label>Nome do cômodo <span style="color:#ff6b6b">*</span></label>
-        <input class="input" id="m-room-name" placeholder="Ex: Sala de Estar" autofocus>
+        <input class="input" id="m-room-name" placeholder="Ex: Sala de Estar" maxlength="50" autofocus>
       </div>
 
       <div class="input-wrap">
-        <label>Lâmpadas deste cômodo</label>
-        ${!Data.bulbs.length ? `
-          <div style="color:var(--text-lo);font-size:11px;padding:10px;
-                      background:var(--dark-3);border-radius:8px;text-align:center">
-            Nenhuma lâmpada cadastrada ainda.<br>
-            <span style="color:var(--amber);cursor:pointer" id="m-go-lamps">
-              Cadastrar na página Lâmpadas →
-            </span>
-          </div>
-        ` : `
-          <div style="display:flex;flex-direction:column;gap:4px;max-height:240px;
-                      overflow-y:auto;padding:4px;border:1px solid var(--border);
-                      border-radius:8px" id="room-lamp-checks">
-            ${Data.bulbs.map(b=>{
-              const inOther = b.roomId;
-              const otherName = inOther ? Data.rooms.find(r=>r.id===b.roomId)?.name : null;
-              return `
-                <label style="display:flex;align-items:center;gap:8px;padding:7px 8px;
-                              border-radius:6px;cursor:pointer">
-                  <input type="checkbox" data-lamp="${b._apiId||b.id}"
-                    style="accent-color:var(--amber)">
-                  <div style="width:8px;height:8px;border-radius:50%;
-                              background:${b.on?b.color:'#444'};flex-shrink:0"></div>
-                  <span style="font-size:12px;color:var(--text-hi)">${b.name}</span>
-                  ${inOther?`<span style="font-size:10px;color:var(--text-lo);margin-left:auto">
-                    atualmente em: ${otherName||'outro cômodo'}
-                  </span>`:''}
-                </label>`;
-            }).join('')}
-          </div>
-          <div style="display:flex;gap:8px;margin-top:6px">
-            <button type="button" class="btn btn--ghost btn--sm" id="m-sel-all">Todas</button>
-            <button type="button" class="btn btn--ghost btn--sm" id="m-sel-none">Nenhuma</button>
-          </div>
-        `}
+        <label>Imagem do cômodo <span style="font-size:10px;color:var(--text-lo);font-weight:400">(opcional, máx. 2 MB)</span></label>
+        <input type="file" class="input" id="m-room-image" accept="image/*">
+      </div>
+
+      <div class="input-wrap">
+        <label>Dispositivos deste cômodo</label>
+        <p style="font-size:10px;color:var(--text-lo);margin:0 0 8px;line-height:1.4">
+          Cada dispositivo pertence a <strong>apenas um</strong> cômodo. Só aparecem os que ainda não estão em outro.
+        </p>
+        ${_devicePickerHtml(null, 'create')}
       </div>
 
       <div id="m-room-err" style="color:#ff6b6b;font-size:12px;display:none;margin-bottom:8px"></div>
@@ -264,35 +351,31 @@ const RoomsPage = (() => {
         <button class="btn btn--primary btn--full" id="m-save-room">Criar</button>
       </div>`, ()=>render());
 
-    document.getElementById('m-go-lamps')?.addEventListener('click',()=>{ Modal.close(); Router.navigate('lamps'); });
-    document.getElementById('m-sel-all')?.addEventListener('click',()=>{
-      document.querySelectorAll('#room-lamp-checks input').forEach(cb=>{ cb.checked=true; cb.closest('label').style.background='var(--amber-dim)'; });
-    });
-    document.getElementById('m-sel-none')?.addEventListener('click',()=>{
-      document.querySelectorAll('#room-lamp-checks input').forEach(cb=>{ cb.checked=false; cb.closest('label').style.background='transparent'; });
-    });
-    document.querySelectorAll('#room-lamp-checks input').forEach(cb=>{
-      cb.addEventListener('change',()=>{ cb.closest('label').style.background=cb.checked?'var(--amber-dim)':'transparent'; });
-    });
+    _bindDevicePicker();
 
     document.getElementById('m-save-room').addEventListener('click', async ()=>{
       const btn   = document.getElementById('m-save-room');
       const errEl = document.getElementById('m-room-err');
       const name  = document.getElementById('m-room-name').value.trim();
       if (!name) { errEl.textContent='Informe o nome.'; errEl.style.display='block'; return; }
-      const selLampIds = [...document.querySelectorAll('#room-lamp-checks input:checked')]
-        .map(cb=>cb.dataset.lamp);
+      const selKeys = [...document.querySelectorAll('#room-lamp-checks input:checked')]
+        .map(cb => cb.dataset.deviceKey);
+      const imageFile = document.getElementById('m-room-image')?.files?.[0] || null;
+
+      if (imageFile && imageFile.size > 2 * 1024 * 1024) {
+        errEl.textContent = 'A imagem deve ter no máximo 2 MB.';
+        errEl.style.display = 'block';
+        return;
+      }
+
       btn.disabled=true; btn.textContent='Criando...';
       try {
-        const room = await Data.addRoom(name);
+        const room = await Data.addRoom(name, imageFile);
         selRoom = room.id;
-        // Associa as lâmpadas selecionadas
-        for (const lampApiId of selLampIds) {
-          const b = Data.bulbs.find(b=>b._apiId===lampApiId||b.id===lampApiId);
-          if (b) { await Api.lamps.configure(lampApiId, b.name, room._apiId); b.roomId=room.id; }
-        }
-        toast(`Cômodo "${name}" criado com ${selLampIds.length} lâmpada${selLampIds.length!==1?'s':''}!`);
+        if (selKeys.length) await Data.syncRoomDevices(room.id, selKeys);
+        toast(`Cômodo "${name}" criado${selKeys.length ? ` com ${selKeys.length} dispositivo${selKeys.length !== 1 ? 's' : ''}` : ''}!`);
         Modal.close();
+        render();
       } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Criar'; }
     });
   }
@@ -301,12 +384,13 @@ const RoomsPage = (() => {
      MODAL — EDITAR CÔMODO
   ══════════════════════════════════════════════════════════ */
   function _openEditRoom(roomId) {
-    const r = Data.rooms.find(r=>r.id===roomId);
+    const r = _findRoom(roomId);
+    if (!r) return;
     Modal.open(`
       <div class="modal__title">Editar Cômodo</div>
       <div class="input-wrap">
         <label>Nome</label>
-        <input class="input" id="m-room-name" value="${r.name}" autofocus>
+        <input class="input" id="m-room-name" value="${r.name}" maxlength="50" autofocus>
       </div>
       <div id="m-room-err" style="color:#ff6b6b;font-size:12px;display:none;margin-bottom:8px"></div>
       <div style="display:flex;gap:8px;margin-top:16px">
@@ -319,81 +403,41 @@ const RoomsPage = (() => {
       const name=document.getElementById('m-room-name').value.trim();
       if (!name) { errEl.textContent='Informe o nome.'; errEl.style.display='block'; return; }
       btn.disabled=true; btn.textContent='Salvando...';
-      try { await Data.editRoom(roomId,name); toast('Cômodo atualizado!'); Modal.close(); }
+      try { await Data.editRoom(roomId, name); toast('Cômodo atualizado!'); Modal.close(); render(); }
       catch(e) { errEl.textContent=e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar'; }
     });
   }
 
   /* ══════════════════════════════════════════════════════════
-     MODAL — GERENCIAR LÂMPADAS DO CÔMODO
+     MODAL — GERENCIAR DISPOSITIVOS DO CÔMODO
   ══════════════════════════════════════════════════════════ */
   function _openManageLamps(roomId) {
-    const r = Data.rooms.find(r=>r.id===roomId);
-    const currentIds = new Set(Data.getBulbs(roomId).map(b=>b._apiId||b.id));
+    const r = _findRoom(roomId);
+    if (!r) return;
 
     Modal.open(`
-      <div class="modal__title">Lâmpadas — ${r.name}</div>
-      ${!Data.bulbs.length ? `
-        <div style="color:var(--text-lo);font-size:12px;padding:14px;text-align:center">
-          Nenhuma lâmpada cadastrada.<br>
-          <span style="color:var(--amber);cursor:pointer" id="m-go-lamps">Cadastrar →</span>
-        </div>
-      ` : `
-        <p style="font-size:11px;color:var(--text-lo);margin-bottom:10px">
-          Marque as lâmpadas que pertencem a <strong style="color:var(--text-hi)">${r.name}</strong>.
-        </p>
-        <div style="display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto;
-                    padding:4px;border:1px solid var(--border);border-radius:8px" id="manage-lamp-checks">
-          ${Data.bulbs.map(b=>{
-            const inThis  = currentIds.has(b._apiId||b.id);
-            const inOther = b.roomId && b.roomId!==roomId;
-            const otherName = inOther ? Data.rooms.find(r=>r.id===b.roomId)?.name : null;
-            return `
-              <label style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;
-                            cursor:pointer;background:${inThis?'var(--amber-dim)':'transparent'}">
-                <input type="checkbox" data-lamp="${b._apiId||b.id}" data-local="${b.id}"
-                  ${inThis?'checked':''} style="accent-color:var(--amber)">
-                <div style="width:8px;height:8px;border-radius:50%;background:${b.on?b.color:'#444'};flex-shrink:0"></div>
-                <span style="font-size:12px;color:var(--text-hi)">${b.name}</span>
-                ${inThis?`<span style="font-size:10px;color:var(--green);margin-left:auto">neste cômodo</span>`:''}
-                ${inOther?`<span style="font-size:10px;color:var(--amber);margin-left:auto">em: ${otherName}</span>`:''}
-              </label>`;
-          }).join('')}
-        </div>
-        <div style="display:flex;gap:8px;margin-top:6px">
-          <button type="button" class="btn btn--ghost btn--sm" id="m-sel-all">Todas</button>
-          <button type="button" class="btn btn--ghost btn--sm" id="m-sel-none">Nenhuma</button>
-        </div>
-      `}
+      <div class="modal__title">Dispositivos — ${r.name}</div>
+      <p style="font-size:11px;color:var(--text-lo);margin-bottom:10px;line-height:1.4">
+        Marque os dispositivos de <strong style="color:var(--text-hi)">${r.name}</strong>.
+        Um dispositivo não pode estar em dois cômodos ao mesmo tempo.
+      </p>
+      ${_devicePickerHtml(roomId, 'manage')}
       <div id="m-manage-err" style="color:#ff6b6b;font-size:12px;display:none;margin-bottom:8px;margin-top:8px"></div>
       <div style="display:flex;gap:8px;margin-top:16px">
         <button class="btn btn--ghost btn--full" data-modal-close>Cancelar</button>
         <button class="btn btn--primary btn--full" id="m-save-lamps">Salvar</button>
       </div>`, ()=>render());
 
-    document.getElementById('m-go-lamps')?.addEventListener('click',()=>{ Modal.close(); Router.navigate('lamps'); });
-    document.getElementById('m-sel-all')?.addEventListener('click',()=>{
-      document.querySelectorAll('#manage-lamp-checks input').forEach(cb=>{ cb.checked=true; cb.closest('label').style.background='var(--amber-dim)'; });
-    });
-    document.getElementById('m-sel-none')?.addEventListener('click',()=>{
-      document.querySelectorAll('#manage-lamp-checks input').forEach(cb=>{ cb.checked=false; cb.closest('label').style.background='transparent'; });
-    });
-    document.querySelectorAll('#manage-lamp-checks input').forEach(cb=>{
-      cb.addEventListener('change',()=>{ cb.closest('label').style.background=cb.checked?'var(--amber-dim)':'transparent'; });
-    });
+    _bindDevicePicker();
 
     document.getElementById('m-save-lamps').addEventListener('click', async ()=>{
       const btn=document.getElementById('m-save-lamps'), errEl=document.getElementById('m-manage-err');
       btn.disabled=true; btn.textContent='Salvando...';
       try {
-        const checked = new Set([...document.querySelectorAll('#manage-lamp-checks input:checked')].map(cb=>cb.dataset.lamp));
-        for (const b of Data.bulbs) {
-          const apiId = b._apiId||b.id;
-          const wasIn = currentIds.has(apiId), nowIn = checked.has(apiId);
-          if (wasIn && !nowIn) { await Api.lamps.configure(apiId,b.name,'',''); b.roomId=null; }
-          else if (!wasIn && nowIn) { await Api.lamps.configure(apiId,b.name,r._apiId||roomId,''); b.roomId=roomId; }
-        }
-        toast('Lâmpadas atualizadas!'); Modal.close();
+        const checked = [...document.querySelectorAll('#room-lamp-checks input:checked')]
+          .map(cb => cb.dataset.deviceKey);
+        await Data.syncRoomDevices(roomId, checked);
+        toast('Dispositivos atualizados!'); Modal.close(); render();
       } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar'; }
     });
   }

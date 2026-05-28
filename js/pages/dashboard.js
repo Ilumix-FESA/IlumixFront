@@ -43,6 +43,29 @@ const DashboardPage = (() => {
     });
   }
 
+  function _sceneDashSub(s) {
+    const n = s.deviceCount || 0;
+    const items = s.deviceSettings || [];
+    if (!items.length) return `${n} disp.`;
+
+    const capKeys = items.map(ds => {
+      const b = Data._resolveBulbByKey(ds.deviceUserId);
+      if (!b) return '';
+      const c = Data.getDeviceCapabilities(b);
+      return [c.hasOn, c.hasBri, c.hasColor, c.hasTemp, c.hasAutoDimmer].join('');
+    });
+    if (new Set(capKeys).size > 1) return `${n} disp. · Cena mista`;
+
+    const st = items[0].settings || {};
+    const b  = Data._resolveBulbByKey(items[0].deviceUserId);
+    const c  = b ? Data.getDeviceCapabilities(b) : {};
+    if (st.powerOn === false) return `${n} disp. · Desligado`;
+    if (c.hasBri && st.brightness != null) return `${n} disp. · ${st.brightness}%`;
+    if (c.hasColor && st.color) return `${n} disp. · Cor`;
+    if (c.hasTemp && st.temp) return `${n} disp. · ${st.temp}`;
+    return `${n} disp. · Ligado`;
+  }
+
   function scenes() {
     const el = document.getElementById('dash-scenes');
     if (!el) return;
@@ -55,7 +78,7 @@ const DashboardPage = (() => {
       <div class="scene-card${s.active?' is-active':''}" data-scene="${s.id}">
         <div class="scene-card__icon">${sceneIcon(s.icon,20)}</div>
         <div class="scene-card__name">${s.name}</div>
-        <div class="scene-card__sub">${s.brightness}% · ${s.temp}</div>
+        <div class="scene-card__sub">${_sceneDashSub(s)}</div>
       </div>`).join('');
     el.querySelectorAll('[data-scene]').forEach(c => {
       c.addEventListener('click', async () => { await Data.activateScene(c.dataset.scene); scenes(); stats(); toast('Cena ativada!'); });
