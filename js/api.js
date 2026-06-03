@@ -82,7 +82,7 @@ const Api = (() => {
       saveUser(u); return d;
     },
     async register(name, email, password, confirmPassword) {
-      const res = await fetch(`${API_BASE_URL}/api/user/register`,
+      const res = await fetch(`${API_BASE_URL}/api/Users/register`,
         { method:'POST', headers:{'Content-Type':'application/json'},
           body:JSON.stringify({name,email,password,confirmPassword}) });
       const d = await res.json();
