@@ -62,7 +62,8 @@ const DevicesPage = (() => {
 
     _renderNetworkSummary();
     _renderList();
-    _renderDetail();
+    if (selId) _renderDetailWithRefresh(selId);
+    else _renderDetail();
   }
 
   function _renderList() {
@@ -70,6 +71,7 @@ const DevicesPage = (() => {
     if (!el) return;
 
     const bulbs = Data.bulbs;
+    if (!selId && bulbs.length) selId = bulbs[0].id;
 
     if (!bulbs.length) {
       el.innerHTML = `
@@ -89,15 +91,16 @@ const DevicesPage = (() => {
       const room    = Data.rooms.find(r => r.id === b.roomId);
       const isSelec = _sameId(b.id, selId);
       const typeLbl = b.deviceTypeName || 'Dispositivo';
+      const hasOn   = Data.getDeviceCapabilities(b).hasOn;
       return `
         <div class="room-card${b.on?' is-on':''}${isSelec?' is-selected-room':''}"
              data-device="${b.id}"
              style="margin-bottom:var(--sp-2);cursor:pointer;padding:var(--sp-3)">
           <div style="display:flex;align-items:center;gap:var(--sp-2)">
             <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;
-                        background:${b.on?b.color:'var(--dark-5)'};
+                        background:${b.color};
                         box-shadow:${b.on?`0 0 10px ${b.color}66`:'none'};
-                        opacity:${b.on?(0.4+b.brightness/100*.6):.3};
+                        opacity:${b.on?(0.4+b.brightness/100*.6):0.35};
                         transition:all .3s">
             </div>
             <div style="flex:1;min-width:0">
@@ -113,8 +116,8 @@ const DevicesPage = (() => {
                 · ${b.on ? b.brightness+'%' : 'desligado'}
               </div>
             </div>
-            <div class="toggle ${b.on?'is-on':''} tog-device" data-device="${b.id}"
-                 style="flex-shrink:0"></div>
+            ${hasOn ? `<div class="toggle ${b.on?'is-on':''} tog-device" data-device="${b.id}"
+                 style="flex-shrink:0"></div>` : ''}
           </div>
         </div>`;
     }).join('') +
@@ -131,23 +134,23 @@ const DevicesPage = (() => {
       });
     });
     el.querySelectorAll('.tog-device').forEach(t => {
-      t.addEventListener('click', e => {
+      t.addEventListener('click', async e => {
         e.stopPropagation();
-        Data.toggleBulb(t.dataset.device);
+        await Data.toggleBulb(t.dataset.device);
         _renderNetworkSummary();
         _renderList();
         if (_sameId(selId, t.dataset.device)) _renderDetail();
       });
     });
     document.getElementById('btn-new-device').addEventListener('click', _openRegister);
-
-    if (!selId && bulbs.length) { selId = bulbs[0].id; _renderList(); _renderDetail(); }
   }
 
   async function _renderDetailWithRefresh(id) {
     const el = document.getElementById('device-detail-wrap');
     if (el) el.innerHTML = `<div style="color:var(--text-lo);font-size:12px;padding:var(--sp-5);text-align:center">Buscando status...</div>`;
     await Data.refreshBulb(id);
+    _renderNetworkSummary();
+    _renderList();
     _renderDetail();
   }
 
@@ -164,9 +167,15 @@ const DevicesPage = (() => {
     }
 
     const cmds = b._cmds || [];
-    const { hasBri, hasColor, hasColorTemp, hasTargetTemp, hasAutoDimmer: hasAD } = Data.getDeviceCapabilities(b);
+    const { hasOn, hasBri, hasColor, hasColorTemp, hasTargetTemp, hasAutoDimmer: hasAD } = Data.getDeviceCapabilities(b);
     const attrs    = b._attrs || [];
-    const getAttr  = id => attrs.find(a => (a.attributeId || a.AttributeId || a.atributo_Id) === id)?.value || '';
+    const getAttr  = (...names) => {
+      for (const n of names) {
+        const a = attrs.find(a => (a.name || a.Name || '').toLowerCase() === n.toLowerCase());
+        if (a !== undefined) return (a.value ?? a.Value ?? '').toString();
+      }
+      return '';
+    };
     const room     = Data.rooms.find(r => r.id === b.roomId);
     const typeLbl  = b.deviceTypeName || 'Dispositivo';
     const fiware   = b.fiwareId || '—';
@@ -204,17 +213,17 @@ const DevicesPage = (() => {
       </div>
 
       <div style="display:flex;justify-content:center;padding:var(--sp-4) 0">
-        <div class="orb${!b.on?' is-off':b.brightness<35?' is-dim':''}"
-          style="${b.on?`--orb-color:${b.color};box-shadow:0 0 ${20+b.brightness/3}px ${b.color}55`:''}">
+        <div class="orb${!b.on?' is-off':b.brightness<35?' is-dim':''}" id="device-orb">
           <div class="orb__ring"></div>
           <div class="orb__ring2"></div>
         </div>
       </div>
 
+      ${hasOn ? `
       <div class="drow" style="margin-bottom:var(--sp-4);padding-bottom:var(--sp-3);border-bottom:1px solid var(--border)">
         <span style="font-size:14px;font-weight:500;color:var(--text-hi)">Liga / Desliga</span>
         <div class="toggle ${b.on?'is-on':''}" id="tog-onoff"></div>
-      </div>
+      </div>` : ''}
 
       ${hasBri ? `
       <div style="margin-bottom:var(--sp-4)">
@@ -242,10 +251,10 @@ const DevicesPage = (() => {
       <div style="margin-bottom:var(--sp-4)">
         <div style="display:flex;justify-content:space-between;margin-bottom:var(--sp-2)">
           <span style="font-size:12px;color:var(--text-mid)">Temperatura (°C)</span>
-          <span class="badge badge--amber" id="tgt-label">${getAttr('targetTemp')||'24'}°C</span>
+          <span class="badge badge--amber" id="tgt-label">${getAttr('targettemperature','targetTemp')||'24'}°C</span>
         </div>
         <input type="number" class="input" id="tgt-temp" min="16" max="30" step="1"
-          value="${getAttr('targetTemp')||'24'}" style="height:36px;padding:0 10px;font-size:12px">
+          value="${getAttr('targettemperature','targetTemp')||'24'}" style="height:36px;padding:0 10px;font-size:12px">
       </div>` : ''}
 
       ${hasColor ? `
@@ -261,18 +270,18 @@ const DevicesPage = (() => {
             <div style="font-size:12px;font-weight:500;color:var(--text-hi)">AutoDimmer</div>
             <div style="font-size:10px;color:var(--text-lo)">Ajusta brilho pelo sensor do ESP32</div>
           </div>
-          <div class="toggle ${getAttr('ad')==='on'?'is-on':''}" id="tog-ad"></div>
+          <div class="toggle ${getAttr('autodimmer','ad')==='on'?'is-on':''}" id="tog-ad"></div>
         </div>
         <div style="display:flex;gap:var(--sp-2);align-items:flex-end">
           <div style="flex:1">
             <div style="font-size:10px;color:var(--text-lo);margin-bottom:4px">Mínimo %</div>
             <input type="number" class="input" id="inp-mindim" min="0" max="100"
-              value="${getAttr('mind')||'0'}" style="height:34px;padding:0 8px;font-size:12px">
+              value="${getAttr('mindim','mind')||'0'}" style="height:34px;padding:0 8px;font-size:12px">
           </div>
           <div style="flex:1">
             <div style="font-size:10px;color:var(--text-lo);margin-bottom:4px">Máximo %</div>
             <input type="number" class="input" id="inp-maxdim" min="0" max="100"
-              value="${getAttr('maxd')||'100'}" style="height:34px;padding:0 8px;font-size:12px">
+              value="${getAttr('maxdim','maxd')||'100'}" style="height:34px;padding:0 8px;font-size:12px">
           </div>
           <button class="btn btn--primary btn--sm" id="btn-ad-bounds" style="height:34px">Aplicar</button>
         </div>
@@ -290,8 +299,8 @@ const DevicesPage = (() => {
         </div>
       </div>`;
 
-    el.querySelector('#tog-onoff').addEventListener('click', () => {
-      Data.toggleBulb(b.id);
+    el.querySelector('#tog-onoff')?.addEventListener('click', async () => {
+      await Data.toggleBulb(b.id);
       _renderNetworkSummary();
       _renderList();
       _renderDetail();
@@ -300,7 +309,7 @@ const DevicesPage = (() => {
     if (hasBri) {
       bindSlider(el.querySelector('#bri-track'), el.querySelector('#bri-fill'),
         el.querySelector('#bri-thumb'), el.querySelector('#bri-label'), b.brightness,
-        v => { Data.setBrightness(b.id, v); _renderList(); });
+        v => { Data.setBrightness(b.id, v); _renderNetworkSummary(); _renderList(); _renderDetail(); });
     }
 
     if (hasColorTemp) {
@@ -331,16 +340,24 @@ const DevicesPage = (() => {
     }
 
     if (hasColor) {
-      bindColorPicker(el, c => { Data.setColor(b.id, c); _renderDetail(); });
+      bindColorPicker(el, c => {
+        Data.setColor(b.id, c);
+        _renderNetworkSummary();
+        _renderList();
+        _renderDetail();
+      });
     }
 
     if (hasAD) {
       const adCmd = _autodimmerCmdName(b);
       el.querySelector('#tog-ad')?.addEventListener('click', async () => {
-        const adAttr = attrs.find(a => (a.attributeId || a.AttributeId) === 'ad');
-        const isOn   = adAttr?.value === 'on';
+        const adAttr = attrs.find(a => {
+          const n = (a.name || a.Name || '').toLowerCase();
+          return n === 'autodimmer' || n === 'ad';
+        });
+        const isOn   = (adAttr?.value ?? adAttr?.Value ?? '') === 'on';
         const newVal = isOn ? 'off' : 'on';
-        if (adAttr) adAttr.value = newVal;
+        if (adAttr) { adAttr.value = newVal; if (adAttr.Value !== undefined) adAttr.Value = newVal; }
         if (adCmd) await Data._sendCmd(b, adCmd, newVal);
         toast('AutoDimmer ' + newVal);
         _renderDetail();
@@ -369,6 +386,8 @@ const DevicesPage = (() => {
         render();
       } catch (e) { toast('❌ ' + e.message); }
     });
+
+    updateOrb(el.querySelector('#device-orb'), b);
   }
 
   function _deviceTypeOptions() {
@@ -514,6 +533,13 @@ const DevicesPage = (() => {
   }
 
   const _selectLamp = _selectDevice;
+
+  document.addEventListener('deviceStateChanged', () => {
+    if (!document.getElementById('devices-page-content')) return;
+    _renderNetworkSummary();
+    _renderList();
+    if (selId) _renderDetail();
+  });
 
   return { render, _selectDevice, _selectLamp };
 })();

@@ -184,7 +184,7 @@ const RoomsPage = (() => {
       });
     });
     el.querySelectorAll('.toggle-room').forEach(t => {
-      t.addEventListener('click', e => { e.stopPropagation(); Data.toggleRoom(t.dataset.room); _renderRoomList(); _renderRoomDetail(); });
+      t.addEventListener('click', async e => { e.stopPropagation(); await Data.toggleRoom(t.dataset.room); _renderRoomList(); _renderRoomDetail(); });
     });
     el.querySelectorAll('.btn-edit-room').forEach(b => {
       b.addEventListener('click', e => { e.stopPropagation(); _openEditRoom(b.dataset.room); });
@@ -223,8 +223,8 @@ const RoomsPage = (() => {
 
     el.innerHTML = `
       ${r.imageUrl ? `
-        <div class="room-detail-hero" style="margin:-4px -4px 14px;border-radius:var(--r-md);overflow:hidden;height:120px">
-          <img src="${r.imageUrl}" alt="${r.name}" style="width:100%;height:100%;object-fit:cover">
+        <div class="room-detail-hero" style="margin:-4px -4px 16px;border-radius:var(--r-md);overflow:hidden;height:460px">
+          <img src="${r.imageUrl}" alt="${r.name}" style="width:100%;height:100%;object-fit:cover;object-position:center">
         </div>` : ''}
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
         <div style="display:flex;align-items:center;gap:10px">
@@ -245,12 +245,14 @@ const RoomsPage = (() => {
       </div>
 
       <!-- Dispositivos do cômodo -->
-      ${lamps.length ? lamps.map(b => `
+      ${lamps.length ? lamps.map(b => {
+        const hasOn = Data.getDeviceCapabilities(b).hasOn;
+        return `
         <div style="display:flex;align-items:center;gap:10px;
                     padding:10px;background:var(--dark-3);border-radius:8px;margin-bottom:6px">
           <div style="width:28px;height:28px;border-radius:50%;flex-shrink:0;
-                      background:${b.on?b.color:'#222'};
-                      opacity:${b.on?(0.4+b.brightness/100*.6):.25};
+                      background:${b.color};
+                      opacity:${b.on?(0.4+b.brightness/100*.6):0.35};
                       box-shadow:${b.on?`0 0 8px ${b.color}66`:'none'}">
           </div>
           <div style="flex:1;min-width:0">
@@ -259,31 +261,24 @@ const RoomsPage = (() => {
           </div>
           <button class="btn btn--ghost btn--sm btn-go-lamp" data-lamp="${b.id}"
             style="font-size:10px">Controlar →</button>
-          <div class="toggle ${b.on?'is-on':''} tog-room-lamp" data-lamp="${b.id}"></div>
-        </div>`).join('') : `
+          ${hasOn ? `<div class="toggle ${b.on?'is-on':''} tog-room-lamp" data-lamp="${b.id}"></div>` : ''}
+        </div>`;
+      }).join('') : `
         <div style="text-align:center;padding:var(--sp-5);background:var(--dark-3);
                     border-radius:8px;color:var(--text-lo);font-size:12px">
           Nenhum dispositivo neste cômodo.<br>
           <span style="font-size:11px;opacity:.7">Clique em "Gerenciar" para adicionar.</span>
-        </div>`}
+        </div>`}`;
 
-      ${lamps.length ? `
-        <button class="btn btn--ghost btn--full" id="btn-party"
-          style="margin-top:10px;${Data.isParty(r.id)?'border-color:var(--amber);color:var(--amber)':''}">
-          ${Data.isParty(r.id)?'✕ Parar modo festa':'🎉 Modo festa'}
-        </button>
-      ` : ''}`;
-
-    el.querySelector('#btn-toggle-all')?.addEventListener('click', ()=>{
-      Data.toggleRoom(r.id); _renderRoomList(); _renderRoomDetail();
+    el.querySelector('#btn-toggle-all')?.addEventListener('click', async ()=>{
+      await Data.toggleRoom(r.id); _renderRoomList(); _renderRoomDetail();
     });
     el.querySelector('#btn-manage-lamps')?.addEventListener('click', ()=>_openManageLamps(r.id));
-    el.querySelector('#btn-party')?.addEventListener('click', ()=>{ _toggleParty(r.id); _renderRoomDetail(); });
 
     el.querySelectorAll('.tog-room-lamp').forEach(t=>{
-      t.addEventListener('click', e=>{
+      t.addEventListener('click', async e=>{
         e.stopPropagation();
-        Data.toggleBulb(t.dataset.lamp);
+        await Data.toggleBulb(t.dataset.lamp);
         _renderRoomDetail(); _renderRoomList();
       });
     });
@@ -300,24 +295,6 @@ const RoomsPage = (() => {
         }, 100);
       });
     });
-  }
-
-  /* ══════════════════════════════════════════════════════════
-     PARTY
-  ══════════════════════════════════════════════════════════ */
-  const PARTY_COLORS = ['#FF4040','#FF8040','#FFD700','#40FF80','#40C0FF','#A040FF','#FF40C0'];
-  let partyTimers = {};
-  function _toggleParty(roomId) {
-    const on = Data.isParty(roomId);
-    Data.setParty(roomId, !on);
-    if (!on) {
-      const lamps = Data.getBulbs(roomId);
-      partyTimers[roomId] = setInterval(()=>{
-        lamps.forEach(b=>{ b.on=true; b.color=PARTY_COLORS[Math.floor(Math.random()*PARTY_COLORS.length)]; b.brightness=80+Math.floor(Math.random()*20); });
-        _renderRoomDetail(); _renderRoomList();
-      }, 400);
-    } else { clearInterval(partyTimers[roomId]); delete partyTimers[roomId]; }
-    _renderRoomList();
   }
 
   /* ══════════════════════════════════════════════════════════
@@ -441,6 +418,12 @@ const RoomsPage = (() => {
       } catch(e) { errEl.textContent=e.message; errEl.style.display='block'; btn.disabled=false; btn.textContent='Salvar'; }
     });
   }
+
+  document.addEventListener('deviceStateChanged', () => {
+    if (!document.getElementById('room-list')) return;
+    _renderRoomList();
+    _renderRoomDetail();
+  });
 
   return { render };
 })();

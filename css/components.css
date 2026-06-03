@@ -50,9 +50,6 @@
 .btn--ghost:hover { border-color: var(--border-hover); color: var(--text-hi); }
 .btn--danger  { background: var(--red-dim); border: 1px solid rgba(181,96,96,0.25); color: var(--red); }
 .btn--danger:hover { background: rgba(181,96,96,0.22); }
-.btn--party   { background: var(--dark-3); border: 1px solid var(--border); color: var(--text-mid); }
-.btn--party:hover { border-color: #FF00FF; color: #FF00FF; }
-.btn--party.is-active { background: linear-gradient(135deg,#FF0080,#9B59FF); border-color: transparent; color: #fff; animation: partyPulse 1s infinite; }
 .btn--full    { width: 100%; justify-content: center; }
 .btn--sm      { padding: 5px 10px; font-size: 11px; }
 .btn--icon    {
@@ -104,7 +101,6 @@
 .badge--on     { background: var(--green-dim); color: var(--green); }
 .badge--off    { background: rgba(58,56,34,0.5); color: var(--text-lo); }
 .badge--amber  { background: var(--amber-dim); color: var(--amber); }
-.badge--party  { background: linear-gradient(135deg,rgba(255,0,128,.15),rgba(155,89,255,.15)); color: #FF3CAC; }
 .badge--wifi   { background: rgba(91,159,212,0.12); color: var(--blue); }
 
 /* ── Inputs ── */

@@ -13,8 +13,12 @@ const Data = (() => {
   let schedules      = [];
   let voiceCommands  = [];
   let commandHistory = [];
-  let partyRooms     = {};
   let _schedTimer    = null;
+  const _refreshTimers = {};
+  const _togglePending = {};
+  const _colorPending  = {};
+  const _brightnessPending = {};
+  const BRI_CACHE_PREFIX = 'ilumix_brightness_';
 
   const energyHourly = [
     {label:'0h',v:.02},{label:'3h',v:.01},{label:'6h',v:.08},{label:'9h',v:.15},
@@ -33,6 +37,78 @@ const Data = (() => {
   const totalPower  = () => bulbs.reduce((s,b)=>s+(b.on?b.power:0),0);
   const activeBulbs = () => bulbs.filter(b=>b.on).length;
   const activeScene = () => scenes.find(s=>s.active)||null;
+
+  function _rgbToHex(s) {
+    if (!s || !String(s).includes(',')) return s;
+    return '#' + String(s).split(',').map(v => parseInt(v.trim(), 10).toString(16).padStart(2, '0')).join('');
+  }
+
+  function _hexToRgb(hex) {
+    const raw = String(hex || '').trim();
+    if (!raw) return '';
+    if (raw.includes(',')) {
+      return raw.split(',').map(v => parseInt(v.trim(), 10)).join(',');
+    }
+    const h = raw.replace('#', '');
+    if (h.length === 3) {
+      return [0, 1, 2].map(i => parseInt(h[i] + h[i], 16)).join(',');
+    }
+    if (h.length === 6) {
+      return [
+        parseInt(h.slice(0, 2), 16),
+        parseInt(h.slice(2, 4), 16),
+        parseInt(h.slice(4, 6), 16),
+      ].join(',');
+    }
+    return raw;
+  }
+
+  function _colorToHex(c) {
+    if (!c) return '#FFFFFF';
+    const s = String(c).trim();
+    return s.startsWith('#') ? s : (s.includes(',') ? _rgbToHex(s) : '#FFFFFF');
+  }
+
+  function _getBrightnessCache(deviceKey) {
+    if (deviceKey == null || deviceKey === '') return null;
+    try {
+      const v = parseInt(localStorage.getItem(BRI_CACHE_PREFIX + deviceKey), 10);
+      return isNaN(v) ? null : Math.min(100, Math.max(0, v));
+    } catch { return null; }
+  }
+
+  function _setBrightnessCache(deviceKey, value) {
+    if (deviceKey == null || deviceKey === '') return;
+    try {
+      localStorage.setItem(BRI_CACHE_PREFIX + deviceKey, String(Math.min(100, Math.max(0, value))));
+    } catch { /* ignore */ }
+  }
+
+  /** Lê brilho do Orion (vários nomes de atributo) com fallback no cache local. */
+  function _readBrightnessFromAttrs(getAttrVal, deviceKey) {
+    const parseVal = (raw) => {
+      if (raw === '' || raw == null) return null;
+      const v = parseInt(String(raw).trim().replace(/%/g, ''), 10);
+      return isNaN(v) ? null : Math.min(100, Math.max(0, v));
+    };
+
+    let bri = null;
+    for (const n of ['brightness', 'bri']) {
+      bri = parseVal(getAttrVal(n));
+      if (bri !== null) break;
+    }
+    if (bri === null) {
+      for (const n of ['luminosity', 'luminosidade']) {
+        bri = parseVal(getAttrVal(n));
+        if (bri !== null) break;
+      }
+    }
+
+    const cached = _getBrightnessCache(deviceKey);
+    if (cached != null && (bri === null || bri === 0)) return cached;
+    if (bri !== null) return bri;
+    return cached != null ? cached : 100;
+  }
 
   /* ── Mappers ─────────────────────────────────────────────── */
   function _locationImageUrl(loc) {
@@ -75,12 +151,10 @@ const Data = (() => {
     };
     const stateRaw = getAttrVal('state')||'off';
     const isOn     = ['on','true','1','yes'].includes(stateRaw.toLowerCase());
-    const briRaw   = parseInt(getAttrVal('brightness')||'100');
+    const apiId   = lamp.id ?? lamp.Id ?? lamp._id;
+    const brightness = _readBrightnessFromAttrs(getAttrVal, apiId != null ? String(apiId) : '');
     const colorRaw = getAttrVal('color')||'';
-    const _rgbToHex = s => '#' + s.split(',').map(v => parseInt(v.trim()).toString(16).padStart(2,'0')).join('');
-    const colorHex  = colorRaw.startsWith('#') ? colorRaw
-                    : colorRaw.includes(',')    ? _rgbToHex(colorRaw)
-                    : '#FFFFFF';
+    const colorHex = colorRaw ? _colorToHex(colorRaw) : '#FFFFFF';
 
     // Monta mapa commandName → commandId (int) a partir de Commands[] retornado pelo backend
     const cmds = lamp.commands||lamp.Commands||[];
@@ -91,7 +165,6 @@ const Data = (() => {
       if (name && id != null) commandIds[name] = id;
     });
 
-    const apiId   = lamp.id ?? lamp.Id ?? lamp._id;
     const locRaw  = lamp.idLocation ?? lamp.IdLocation ?? lamp.locationId ?? lamp.LocationId;
 
     return {
@@ -99,7 +172,7 @@ const Data = (() => {
       roomId:          locRaw != null && locRaw !== '' ? String(locRaw) : null,
       name:            lamp.name||lamp.Name||'(sem nome)',
       on:              isOn,
-      brightness:      isNaN(briRaw)?100:Math.min(100,Math.max(0,briRaw)),
+      brightness,
       color:           colorHex,
       temp:            getAttrVal('colortemperature','temperature')||'4000K',
       power:           0,
@@ -168,6 +241,55 @@ const Data = (() => {
     return null;
   }
 
+  function _resolveCommandId(bulb, commandName) {
+    const lower = commandName.toLowerCase();
+    return findCommandId(bulb, n => n.toLowerCase() === lower);
+  }
+
+  function _setBulbStateAttr(bulb, isOn) {
+    const val = isOn ? 'on' : 'off';
+    for (const a of bulb._attrs || []) {
+      if ((a.name || a.Name || '').toLowerCase() === 'state') {
+        if (a.value !== undefined) a.value = val;
+        if (a.Value !== undefined) a.Value = val;
+        break;
+      }
+    }
+  }
+
+  function _setBulbColorAttr(bulb, hexColor) {
+    const rgb = _hexToRgb(hexColor);
+    for (const a of bulb._attrs || []) {
+      if ((a.name || a.Name || '').toLowerCase() === 'color') {
+        if (a.value !== undefined) a.value = rgb;
+        if (a.Value !== undefined) a.Value = rgb;
+        break;
+      }
+    }
+  }
+
+  function _setBulbBrightnessAttr(bulb, value) {
+    const str = String(Math.min(100, Math.max(0, value)));
+    for (const a of bulb._attrs || []) {
+      const n = (a.name || a.Name || '').toLowerCase();
+      if (n === 'brightness' || n === 'bri' || n === 'luminosity' || n === 'luminosidade') {
+        if (a.value !== undefined) a.value = str;
+        if (a.Value !== undefined) a.Value = str;
+        break;
+      }
+    }
+  }
+
+  function _scheduleRefresh(bulbId, delay = 2500) {
+    const key = String(bulbId);
+    clearTimeout(_refreshTimers[key]);
+    _refreshTimers[key] = setTimeout(async () => {
+      delete _refreshTimers[key];
+      await refreshBulb(key);
+      document.dispatchEvent(new CustomEvent('deviceStateChanged', { detail: { id: key } }));
+    }, delay);
+  }
+
   function getDeviceCapabilities(b) {
     const cmds     = b._cmds || [];
     const cmdNames = cmds.map(c => (c.name || c.Name || '').toLowerCase());
@@ -196,7 +318,7 @@ const Data = (() => {
       brightness:   base.brightness != null && !isNaN(base.brightness) ? base.brightness : 80,
       temp:         base.temp || '2700K',
       targetTemp:   base.targetTemp != null && !isNaN(base.targetTemp) ? base.targetTemp : 24,
-      color:        base.color && base.color.startsWith('#') ? base.color : '#E2B84A',
+      color:        base.color ? _colorToHex(base.color) : '#E2B84A',
       autoDimmerOn: false,
       minDim:       0,
       maxDim:       100,
@@ -326,6 +448,25 @@ const Data = (() => {
       const fresh  = await Api.devices.getById(b._apiId);
       const mapped = _mapLamp(fresh);
       mapped.roomId = b.roomId;
+      const key = String(b.id);
+      const pending = _togglePending[key];
+      if (pending && Date.now() < pending.until) {
+        mapped.on = pending.wantOn;
+      } else if (pending) {
+        delete _togglePending[key];
+      }
+      const colorPending = _colorPending[key];
+      if (colorPending && Date.now() < colorPending.until) {
+        mapped.color = colorPending.hex;
+      } else if (colorPending) {
+        delete _colorPending[key];
+      }
+      const briPending = _brightnessPending[key];
+      if (briPending && Date.now() < briPending.until) {
+        mapped.brightness = briPending.value;
+      } else if (briPending) {
+        delete _brightnessPending[key];
+      }
       Object.assign(b, mapped);
       return b;
     } catch(e) { console.warn('[refreshBulb]', e.message); return b; }
@@ -335,25 +476,62 @@ const Data = (() => {
      SYNC — envia comando ao backend
      CommandId é inteiro (Commands.Id) resolvido via _commandIds
   ══════════════════════════════════════════════════════════ */
-  async function _sendCmd(bulb, commandName, value) {
-    if (!bulb._apiId) return;
-    const cmdId = bulb._commandIds?.[commandName];
+  async function _sendCmd(bulb, commandName, value, opts = {}) {
+    const { refresh = true, refreshDelay = 2500, onFail = null } = opts;
+    if (!bulb._apiId) { onFail?.(); return false; }
+    const cmdId = _resolveCommandId(bulb, commandName);
     if (cmdId == null) {
       console.warn(`[Sync] Comando "${commandName}" não encontrado para ${bulb.name}`);
-      return;
+      onFail?.();
+      return false;
     }
     try {
       await Api.devices.command(bulb._apiId, cmdId, String(value));
       logCommand(`${bulb.name} → ${commandName}: ${value}`);
+      if (refresh) _scheduleRefresh(String(bulb.id), refreshDelay);
+      return true;
     } catch(e) {
       console.error(`[Sync] ${commandName}:`, e.message);
       if (typeof toast==='function') toast('⚠️ '+bulb.name+': '+e.message);
+      onFail?.();
+      return false;
     }
   }
 
-  function _syncToggle(bulb)     { _sendCmd(bulb, bulb.on ? 'on' : 'off', bulb.on ? 'on' : 'off'); }
+  async function setBulbPower(id, wantOn, { refresh = true } = {}) {
+    const b = _findBulb(id);
+    if (!b) return false;
+    if (b.on === wantOn) return true;
+
+    const cmdName = wantOn ? 'on' : 'off';
+    if (_resolveCommandId(b, cmdName) == null) {
+      console.warn(`[Sync] Comando "${cmdName}" não encontrado para ${b.name}`);
+      if (typeof toast==='function') toast(`⚠️ ${b.name}: comando ${cmdName} indisponível`);
+      return false;
+    }
+
+    const prevOn = b.on;
+    b.on = wantOn;
+    _setBulbStateAttr(b, wantOn);
+    _togglePending[String(b.id)] = { until: Date.now() + 4000, wantOn };
+
+    return _sendCmd(b, cmdName, cmdName, {
+      refresh,
+      onFail: () => {
+        b.on = prevOn;
+        _setBulbStateAttr(b, prevOn);
+        delete _togglePending[String(b.id)];
+        document.dispatchEvent(new CustomEvent('deviceStateChanged', { detail: { id: b.id } }));
+      },
+    });
+  }
+
+  function _syncToggle(bulb) {
+    const cmdName = bulb.on ? 'on' : 'off';
+    return _sendCmd(bulb, cmdName, cmdName);
+  }
   function _syncBrightness(bulb) { _sendCmd(bulb, 'setBrightness', bulb.brightness); }
-  function _syncColor(bulb)      { _sendCmd(bulb, 'setColor', bulb.color); }
+  function _syncColor(bulb)      { _sendCmd(bulb, 'setColor', _hexToRgb(bulb.color)); }
   function _syncTemp(bulb)       { _sendCmd(bulb, 'setColorTemperature', bulb.temp); }
 
   /* ══════════════════════════════════════════════════════════
@@ -507,17 +685,39 @@ const Data = (() => {
   const renameBulb = renameDevice;
 
   /* ── Controles ── */
-  function toggleBulb(id)      { const b=_findBulb(id); if(!b) return; b.on=!b.on; _syncToggle(b); }
-  function setBrightness(id,v) { const b=_findBulb(id); if(!b) return; b.brightness=Math.max(0,Math.min(100,v)); _syncBrightness(b); }
-  function setColor(id,c)      { const b=_findBulb(id); if(!b) return; b.color=c; _syncColor(b); }
+  function toggleBulb(id) {
+    const b = _findBulb(id);
+    if (!b) return Promise.resolve(false);
+    return setBulbPower(id, !b.on);
+  }
+  function setBrightness(id, v) {
+    const b = _findBulb(id);
+    if (!b) return;
+    const bri = Math.max(0, Math.min(100, v));
+    b.brightness = bri;
+    _setBulbBrightnessAttr(b, bri);
+    const key = String(b._apiId ?? b.id);
+    _setBrightnessCache(key, bri);
+    _brightnessPending[key] = { until: Date.now() + 6000, value: bri };
+    _syncBrightness(b);
+    document.dispatchEvent(new CustomEvent('deviceStateChanged', { detail: { id: b.id } }));
+  }
+  function setColor(id, c) {
+    const b = _findBulb(id);
+    if (!b) return;
+    const hex = _colorToHex(c);
+    b.color = hex;
+    _setBulbColorAttr(b, hex);
+    _colorPending[String(b.id)] = { until: Date.now() + 6000, hex };
+    _syncColor(b);
+    document.dispatchEvent(new CustomEvent('deviceStateChanged', { detail: { id: b.id } }));
+  }
   function setTemp(id,t)       { const b=_findBulb(id); if(!b) return; b.temp=t; _syncTemp(b); }
   function toggleRoom(rid) {
-    const rb=getBulbs(rid), anyOn=rb.some(b=>b.on);
-    rb.forEach(b=>{ b.on=!anyOn; _syncToggle(b); });
+    const rb = getBulbs(rid);
+    const wantOn = !rb.some(b => b.on);
+    return Promise.all(rb.map(b => setBulbPower(b.id, wantOn)));
   }
-  function setParty(rid,val) { partyRooms[rid]=val; }
-  function isParty(rid)      { return !!partyRooms[rid]; }
-
   /* ══════════════════════════════════════════════════════════
      SCENES CRUD + ACTIVATE
      POST /api/Scenes { name, description, devices:[{deviceUserId, commands:[{commandId:int, value}]}] }
@@ -544,7 +744,7 @@ const Data = (() => {
       push(findCommandId(b, n => n.includes('brightness')), settings.brightness);
     }
     if (settings.color) {
-      push(findCommandId(b, n => n.includes('color') && !n.includes('temp')), settings.color);
+      push(findCommandId(b, n => n.includes('color') && !n.includes('temp')), _hexToRgb(settings.color));
     }
     if (settings.temp) {
       push(findCommandId(b, n => n === 'setcolortemperature' || n.includes('colortemp')), settings.temp);
@@ -629,11 +829,25 @@ const Data = (() => {
   async function editScene(id, d) {
     const s = _findScene(id);
     if (!s) return;
-    if (s._apiId) {
-      try { await Api.scenes.delete(s._apiId); } catch { /* segue */ }
+
+    const newDeviceKeys = new Set((d.deviceConfigs || []).map(c => String(c.deviceKey)));
+    const oldDeviceKeys = new Set((s.deviceUserIds || []).map(String));
+    const sameDevices = newDeviceKeys.size === oldDeviceKeys.size &&
+      [...newDeviceKeys].every(k => oldDeviceKeys.has(k));
+
+    if (s._apiId && sameDevices) {
+      // Apenas nome/descrição mudou → usa PUT /rename (CRUD Update via API)
+      await Api.scenes.update(s._apiId, { name: d.name, description: d.description || '' });
+      await reloadScenesFromApi();
+      return scenes.find(x => String(x._apiId) === String(s._apiId));
+    } else {
+      // Dispositivos mudaram → renomeia e recria a cena com os novos dispositivos
+      if (s._apiId) {
+        try { await Api.scenes.delete(s._apiId); } catch { /* segue */ }
+      }
+      scenes = scenes.filter(x => String(x.id) !== String(id));
+      return addScene({ ...d });
     }
-    scenes = scenes.filter(x => String(x.id) !== String(id));
-    return addScene(d);
   }
 
   async function deleteScene(id) {
@@ -664,7 +878,7 @@ const Data = (() => {
         else if (cmdName === 'off') b.on = false;
         else if (cmdName.includes('brightness')) b.brightness = parseInt(val, 10) || b.brightness;
         else if (cmdName.includes('colortemp') || cmdName.includes('temperature')) b.temp = val;
-        else if (cmdName.includes('color')) b.color = val.startsWith('#') ? val : b.color;
+        else if (cmdName.includes('color')) b.color = _colorToHex(val);
       }
     }
 
@@ -704,7 +918,7 @@ const Data = (() => {
       const targets =
         sched.targetType==='room' ? getBulbs(sched.targetId) :
         sched.targetType==='bulb' ? bulbs.filter(b=>b.id===sched.targetId) : bulbs;
-      for (const b of targets) { b.on=true; _syncToggle(b); }
+      for (const b of targets) { await setBulbPower(b.id, true); }
       logCommand('Rotina: '+sched.name, 'Rotina');
     } catch(e) { console.error('[Scheduler]', e.message); }
   }
@@ -742,8 +956,8 @@ const Data = (() => {
   function deleteVoiceCmd(id) { voiceCommands=voiceCommands.filter(v=>v.id!==id); }
   async function executeVoice(vc) {
     switch(vc.action){
-      case 'all_off':     for(const b of bulbs){ b.on=false; _syncToggle(b); } break;
-      case 'all_on':      for(const b of bulbs){ b.on=true;  _syncToggle(b); } break;
+      case 'all_off':     for (const b of bulbs) await setBulbPower(b.id, false); break;
+      case 'all_on':      for (const b of bulbs) await setBulbPower(b.id, true); break;
       case 'toggle_room': toggleRoom(vc.roomId); break;
       case 'toggle_bulb': toggleBulb(vc.bulbId); break;
       case 'scene':       await activateScene(vc.sceneId); break;
@@ -777,8 +991,7 @@ const Data = (() => {
     addRoom,    editRoom,    deleteRoom,  setDeviceRoom, syncRoomDevices,
     refreshBulbsFromApi, _findRoom,
     addDevice,  addBulb,     deleteBulb,  renameDevice, renameBulb,
-    toggleBulb, setBrightness, setColor, setTemp, toggleRoom,
-    setParty,   isParty,
+    toggleBulb, setBulbPower, setBrightness, setColor, setTemp, toggleRoom,
     addScene,   editScene,   deleteScene, activateScene,
     addSchedule,editSchedule,deleteSchedule,toggleSchedule,
     addVoiceCmd,editVoiceCmd,deleteVoiceCmd,executeVoice,

@@ -153,11 +153,12 @@ const Api = (() => {
 
   /* ══════════════════════════════════════════════════════════
      CENAS  →  /api/Scenes
-     GET    /api/Scenes/my-scenes   → [ScenesViewModel]
+     GET    /api/Scenes/my-scenes        → [ScenesViewModel]
        Cada item: { id, idUser, name, description, active, devices:[{deviceUserId, commands:[{commandId,value}]}] }
-     POST   /api/Scenes             → { message }
+     POST   /api/Scenes                  → { message }
        body: { name, description, devices:[{deviceUserId, commands:[{commandId,value}]}] }
-     POST   /api/Scenes/{id}/activate → { message }
+     PUT    /api/Scenes/{id}/rename      → 204 (atualiza nome e descrição)
+     POST   /api/Scenes/{id}/activate   → { message }
      DELETE /api/Scenes/{id}
   ══════════════════════════════════════════════════════════ */
   const scenes = {
@@ -168,6 +169,11 @@ const Api = (() => {
                           name:        d.name,
                           description: d.description || '',
                           devices:     d.devices || [],
+                        }),
+
+    update:   (id, d) => PUT(`/api/Scenes/${id}/rename`, {
+                          name:        d.name,
+                          description: d.description || '',
                         }),
 
     activate: id     => POST(`/api/Scenes/${id}/activate`),

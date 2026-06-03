@@ -208,9 +208,10 @@ const ScenesPage = (() => {
     const caps = Data.getDeviceCapabilities(b);
 
     if (caps.hasOn) {
-      document.getElementById(`${pfx}-power`)?.addEventListener('click', el => {
-        settings.powerOn = !el.classList.contains('is-on');
-        el.classList.toggle('is-on', settings.powerOn);
+      const togEl = document.getElementById(`${pfx}-power`);
+      togEl?.addEventListener('click', () => {
+        settings.powerOn = !togEl.classList.contains('is-on');
+        togEl.classList.toggle('is-on', settings.powerOn);
       });
     }
 

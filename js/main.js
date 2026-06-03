@@ -34,6 +34,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   Router.register('commands',  CommandsPage.render);
   Router.register('energy',    EnergyPage.render);
   Router.register('history',   HistoryPage.render);
+  Router.register('reports',   ReportsPage.render);
+  Router.register('sobre',     SobrePage.render);
   Router.register('account',   AccountPage.render);
 
   /* ── Navegação ── */

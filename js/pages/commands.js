@@ -20,8 +20,8 @@ const CommandsPage = (() => {
 
     // Usa Data.toggleBulb/setBrightness/setColor que internamente usam _findCmd com os nomes reais do banco
     const chips = [
-      { l:'Ligar tudo',    a: async () => { for(const b of Data.bulbs){ if(!b.on) Data.toggleBulb(b.id); } } },
-      { l:'Apagar tudo',   a: async () => { for(const b of Data.bulbs){ if(b.on)  Data.toggleBulb(b.id); } } },
+      { l:'Ligar tudo',    a: async () => { for (const b of Data.bulbs) await Data.setBulbPower(b.id, true); } },
+      { l:'Apagar tudo',   a: async () => { for (const b of Data.bulbs) await Data.setBulbPower(b.id, false); } },
       { l:'Brilho máximo', a: async () => { for(const b of Data.bulbs) Data.setBrightness(b.id,100); } },
       { l:'Economia',      a: async () => { for(const b of Data.bulbs.filter(b=>b.on)) Data.setBrightness(b.id,30); } },
       { l:'Cor quente',    a: async () => { for(const b of Data.bulbs) Data.setTemp(b.id,'2700K'); } },
