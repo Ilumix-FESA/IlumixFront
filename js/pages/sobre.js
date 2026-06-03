@@ -5,8 +5,10 @@
 const SobrePage = (() => {
 
   const alunos = [
-    { nome: 'Laura',   ra: 'RA000000', curso: 'Engenharia da Computação' },
-    { nome: 'Aluno 2', ra: 'RA000001', curso: 'Engenharia da Computação' },
+    { nome: 'Ana Beatriz Rodrigues Vieira',      ra: '081240035', curso: 'Engenharia da Computação' },
+    { nome: 'Gabriel Henrique Prudencio Pereira', ra: '081240024', curso: 'Engenharia da Computação' },
+    { nome: 'Laura Esther Correia Jeronimo',      ra: '081240039', curso: 'Engenharia da Computação' },
+    { nome: 'Raíssa Bespalec Daloia',             ra: '081240024', curso: 'Engenharia da Computação' },
   ];
 
   const tecnologias = [
@@ -107,7 +109,7 @@ const SobrePage = (() => {
               display:flex;align-items:center;justify-content:center;
               margin:0 auto var(--sp-3);
               font-size:20px;font-weight:600;color:var(--amber)">
-              ${a.nome.charAt(0).toUpperCase()}
+              ${a.nome.split(' ').filter((_,i,arr)=>i===0||i===arr.length-1).map(p=>p[0]).join('').toUpperCase()}
             </div>
             <div style="font-size:14px;font-weight:600;color:var(--text-hi);margin-bottom:4px">${a.nome}</div>
             <div style="font-size:11px;color:var(--amber);font-weight:500;margin-bottom:4px">${a.ra}</div>
