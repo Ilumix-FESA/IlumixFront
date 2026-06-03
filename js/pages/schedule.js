@@ -73,16 +73,32 @@ const SchedulePage = (() => {
     }).join('') +
     `<button class="btn btn--ghost btn--full" id="btn-add-sched" style="margin-top:8px">${icon('plus',13)} Nova Rotina</button>`;
 
-    el.querySelectorAll('.tog-sched').forEach(t=>{
-      t.addEventListener('click',()=>{ Data.toggleSchedule(Number(t.dataset.sched)); render(); });
+    el.querySelectorAll('.tog-sched').forEach(t => {
+      t.addEventListener('click', async () => {
+        const id = Number(t.dataset.sched);
+        t.classList.toggle('is-on');
+        try {
+          await Data.toggleSchedule(id);
+        } catch (e) {
+          t.classList.toggle('is-on');
+          toast('❌ ' + e.message);
+        }
+      });
     });
-    el.querySelectorAll('.btn-edit-sched').forEach(b=>{
-      b.addEventListener('click',()=>_openEditSched(Number(b.dataset.sched)));
+    el.querySelectorAll('.btn-edit-sched').forEach(b => {
+      b.addEventListener('click', () => _openEditSched(Number(b.dataset.sched)));
     });
-    el.querySelectorAll('.btn-del-sched').forEach(b=>{
-      b.addEventListener('click',()=>{
+    el.querySelectorAll('.btn-del-sched').forEach(b => {
+      b.addEventListener('click', async () => {
         if (!confirm('Excluir rotina?')) return;
-        Data.deleteSchedule(Number(b.dataset.sched)); render();
+        b.disabled = true;
+        try {
+          await Data.deleteSchedule(Number(b.dataset.sched));
+          render();
+        } catch (e) {
+          toast('❌ ' + e.message);
+          b.disabled = false;
+        }
       });
     });
     document.getElementById('btn-add-sched')?.addEventListener('click', _openAddSched);
@@ -90,7 +106,7 @@ const SchedulePage = (() => {
 
   function _targetLabel(s) {
     if (s.targetType==='room') return Data.rooms.find(r=>r.id===s.targetId)?.name||'Cômodo';
-    if (s.targetType==='bulb') return Data.bulbs.find(b=>b.id===s.targetId)?.name||'Lâmpada';
+    if (s.targetType==='bulb') return Data.bulbs.find(b=>b.id===s.targetId)?.name||'Dispositivo';
     return 'Toda a casa';
   }
 
@@ -110,58 +126,36 @@ const SchedulePage = (() => {
         <div style="font-size:10px;color:var(--text-lo);margin-top:4px">Clique para ativar/desativar cada dia</div>
       </div>
       <div class="input-wrap">
-        <label>Cena a ativar</label>
-        <select class="input" id="m-s-scene">
-          <option value="">— Nenhuma (apenas liga as luzes) —</option>
-          ${Data.scenes.map(sc=>`<option value="${sc.id}"${s.sceneId===sc.id?' selected':''}>${sc.name}</option>`).join('')}
-        </select>
-      </div>
-      <div class="input-wrap">
-        <label>Aplicar em</label>
-        <select class="input" id="m-s-target-type">
-          <option value="all"${(!s.targetType||s.targetType==='all')?' selected':''}>Toda a casa</option>
-          <option value="room"${s.targetType==='room'?' selected':''}>Cômodo específico</option>
-          <option value="bulb"${s.targetType==='bulb'?' selected':''}>Lâmpada específica</option>
-        </select>
-      </div>
-      <div class="input-wrap" id="m-s-room-wrap" style="${s.targetType!=='room'?'display:none':''}">
-        <label>Cômodo</label>
-        <select class="input" id="m-s-target-room">
-          ${Data.rooms.map(r=>`<option value="${r.id}"${s.targetId===r.id?' selected':''}>${r.name}</option>`).join('')}
-        </select>
-      </div>
-      <div class="input-wrap" id="m-s-bulb-wrap" style="${s.targetType!=='bulb'?'display:none':''}">
-        <label>Lâmpada</label>
-        <select class="input" id="m-s-target-bulb">
-          ${Data.bulbs.map(b=>`<option value="${b.id}"${s.targetId===b.id?' selected':''}>${b.name} (${Data.rooms.find(r=>r.id===b.roomId)?.name||'sem cômodo'})</option>`).join('')}
-        </select>
+        <label>Cena a ativar <span style="color:#ff6b6b">*</span></label>
+        ${Data.scenes.length
+          ? `<select class="input" id="m-s-scene">
+              <option value="">— Selecione uma cena —</option>
+              ${Data.scenes.map(sc=>`<option value="${sc.id}"${s.sceneId===sc.id?' selected':''}>${sc.name}</option>`).join('')}
+            </select>`
+          : `<div style="font-size:12px;color:var(--text-lo);padding:8px;background:var(--dark-3);border-radius:8px">
+              Nenhuma cena cadastrada.
+              <span style="color:var(--amber);cursor:pointer" id="m-go-scenes">Criar cena →</span>
+            </div>`
+        }
       </div>`;
   }
 
   function _bindForm() {
-    const tt=document.getElementById('m-s-target-type');
-    const rw=document.getElementById('m-s-room-wrap');
-    const bw=document.getElementById('m-s-bulb-wrap');
-    tt?.addEventListener('change',()=>{
-      rw.style.display=tt.value==='room'?'':'none';
-      bw.style.display=tt.value==='bulb'?'':'none';
+    bindDayDots(document.getElementById('m-s-days')?.closest('.input-wrap') || document.body);
+    document.getElementById('m-go-scenes')?.addEventListener('click', () => {
+      Modal.close();
+      Router.navigate('scenes');
     });
-    bindDayDots(document.getElementById('m-s-days')?.closest('.input-wrap')||document.body);
   }
 
   function _readForm() {
-    const tt=document.getElementById('m-s-target-type')?.value||'all';
-    // Lê os dias do dot-grid
-    const dayDots=[...document.querySelectorAll('#m-s-days .day-dot')];
-    const days=dayDots.length ? dayDots.map(d=>d.classList.contains('is-active')?1:0) : [1,1,1,1,1,0,0];
+    const dayDots = [...document.querySelectorAll('#m-s-days .day-dot')];
+    const days    = dayDots.length ? dayDots.map(d => d.classList.contains('is-active') ? 1 : 0) : [1,1,1,1,1,0,0];
     return {
-      name:       document.getElementById('m-s-name')?.value.trim(),
-      time:       document.getElementById('m-s-time')?.value,
+      name:    document.getElementById('m-s-name')?.value.trim(),
+      time:    document.getElementById('m-s-time')?.value,
       days,
-      sceneId:    document.getElementById('m-s-scene')?.value||null,
-      targetType: tt,
-      targetId:   tt==='room' ? document.getElementById('m-s-target-room')?.value :
-                  tt==='bulb' ? document.getElementById('m-s-target-bulb')?.value : null,
+      sceneId: document.getElementById('m-s-scene')?.value || null,
     };
   }
 
@@ -176,13 +170,33 @@ const SchedulePage = (() => {
       </div>`, ()=>render());
 
     _bindForm();
-    document.getElementById('m-save-sched').addEventListener('click',()=>{
-      const errEl=document.getElementById('m-err');
-      const data=_readForm();
-      if (!data.name||!data.time){ errEl.textContent='Preencha nome e horário.'; errEl.style.display='block'; return; }
-      Data.addSchedule(data);
-      toast('Rotina criada! Será executada às '+data.time);
-      Modal.close();
+    document.getElementById('m-save-sched').addEventListener('click', async () => {
+      const errEl = document.getElementById('m-err');
+      const btn   = document.getElementById('m-save-sched');
+      const data  = _readForm();
+      errEl.style.display = 'none';
+      if (!data.name || !data.time) {
+        errEl.textContent = 'Preencha nome e horário.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!data.sceneId) {
+        errEl.textContent = 'Selecione uma cena para a rotina.';
+        errEl.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Criando...';
+      try {
+        await Data.addSchedule(data);
+        toast('Rotina criada! Será executada às ' + data.time);
+        Modal.close();
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Criar';
+      }
     });
   }
 
@@ -198,13 +212,33 @@ const SchedulePage = (() => {
       </div>`, ()=>render());
 
     _bindForm();
-    document.getElementById('m-save-sched').addEventListener('click',()=>{
-      const errEl=document.getElementById('m-err');
-      const data=_readForm();
-      if (!data.name||!data.time){ errEl.textContent='Preencha nome e horário.'; errEl.style.display='block'; return; }
-      Data.editSchedule(schedId, data);
-      toast('Rotina atualizada!');
-      Modal.close();
+    document.getElementById('m-save-sched').addEventListener('click', async () => {
+      const errEl = document.getElementById('m-err');
+      const btn   = document.getElementById('m-save-sched');
+      const data  = _readForm();
+      errEl.style.display = 'none';
+      if (!data.name || !data.time) {
+        errEl.textContent = 'Preencha nome e horário.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!data.sceneId) {
+        errEl.textContent = 'Selecione uma cena para a rotina.';
+        errEl.style.display = 'block';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+      try {
+        await Data.editSchedule(schedId, data);
+        toast('Rotina atualizada!');
+        Modal.close();
+      } catch (e) {
+        errEl.textContent = e.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Salvar';
+      }
     });
   }
 

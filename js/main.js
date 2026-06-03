@@ -27,18 +27,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   /* ── Registra páginas ── */
   Router.register('dashboard', DashboardPage.render);
-  Router.register('lamps',     LampsPage.render);
+  Router.register('devices',   DevicesPage.render);
   Router.register('rooms',     RoomsPage.render);
   Router.register('scenes',    ScenesPage.render);
   Router.register('schedule',  SchedulePage.render);
   Router.register('commands',  CommandsPage.render);
   Router.register('energy',    EnergyPage.render);
   Router.register('history',   HistoryPage.render);
-  Router.register('wifi',      WifiPage.render);
+  Router.register('reports',   ReportsPage.render);
+  Router.register('sobre',     SobrePage.render);
   Router.register('account',   AccountPage.render);
-
-  /* ── Inicializa controles da página WiFi ── */
-  WifiPage.init();
 
   /* ── Navegação ── */
   document.querySelectorAll('[data-nav]').forEach(el => {
@@ -70,15 +68,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* ── Notification bell ── */
   _initNotifications();
 
-  /* ── Handle cross-page lamp selection ── */
-  document.addEventListener('selectLamp', e => {
-    if (typeof LampsPage !== 'undefined') {
-      LampsPage._selectLamp?.(e.detail.id);
-    }
-  });
+  /* ── Handle cross-page device selection ── */
+  function _onSelectDevice(e) {
+    DevicesPage._selectDevice?.(e.detail.id);
+  }
+  document.addEventListener('selectDevice', _onSelectDevice);
+  document.addEventListener('selectLamp', _onSelectDevice);
 
   /* ── Init router ── */
-  const hash = location.hash.replace('#','');
+  let hash = location.hash.replace('#', '');
+  if (hash === 'lamps' || hash === 'wifi') hash = 'devices';
   Router.init(hash || 'dashboard');
 });
 
@@ -154,7 +153,7 @@ function _initNotifications() {
 function _renderNotifPanel(panel) {
   const history = Data.commandHistory.slice(0, 8);
   const stats   = {
-    lamps:  Data.bulbs.length,
+    devices: Data.bulbs.length,
     on:     Data.activeBulbs(),
     rooms:  Data.rooms.length,
     scenes: Data.scenes.length,
@@ -166,8 +165,8 @@ function _renderNotifPanel(panel) {
     </div>
     <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div style="background:var(--dark-3);border-radius:8px;padding:8px 10px">
-        <div style="font-size:18px;font-weight:300;color:var(--amber)">${stats.on}<span style="font-size:11px;color:var(--text-lo)">/${stats.lamps}</span></div>
-        <div style="font-size:10px;color:var(--text-mid);margin-top:2px">Luzes acesas</div>
+        <div style="font-size:18px;font-weight:300;color:var(--amber)">${stats.on}<span style="font-size:11px;color:var(--text-lo)">/${stats.devices}</span></div>
+        <div style="font-size:10px;color:var(--text-mid);margin-top:2px">Dispositivos ligados</div>
       </div>
       <div style="background:var(--dark-3);border-radius:8px;padding:8px 10px">
         <div style="font-size:18px;font-weight:300;color:var(--amber)">${stats.rooms}</div>

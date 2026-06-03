@@ -62,7 +62,7 @@ const EnergyPage = (() => {
         </div>
         <div style="text-align:center;flex:1">
           <div style="font-size:18px;font-weight:300;color:var(--green)">${Data.bulbs.length}</div>
-          <div style="font-size:10px;color:var(--text-lo);margin-top:2px">Lâmpadas</div>
+          <div style="font-size:10px;color:var(--text-lo);margin-top:2px">Dispositivos</div>
         </div>
         <div style="text-align:center;flex:1">
           <div style="font-size:18px;font-weight:300;color:var(--blue)">${Data.activeBulbs()}</div>

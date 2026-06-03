@@ -191,12 +191,20 @@ function signalHtml(rssi) {
 function updateOrb(orbEl, bulb) {
   if (!orbEl) return;
   orbEl.classList.remove('is-dim','is-off');
-  if (!bulb || !bulb.on || bulb.brightness === 0) {
+  orbEl.style.opacity = '';
+  if (!bulb || !bulb.color) {
     orbEl.classList.add('is-off');
     orbEl.style.background = '';
     orbEl.style.boxShadow  = '';
+    return;
+  }
+  const light = lighten(bulb.color, 35);
+  if (!bulb.on || bulb.brightness === 0) {
+    orbEl.classList.add('is-off');
+    orbEl.style.background = `radial-gradient(circle at 38% 33%, ${light}, ${bulb.color} 65%)`;
+    orbEl.style.boxShadow  = `0 0 12px ${bulb.color}33`;
+    orbEl.style.opacity    = '0.4';
   } else {
-    const light = lighten(bulb.color, 35);
     orbEl.style.background = `radial-gradient(circle at 38% 33%, ${light}, ${bulb.color} 65%)`;
     orbEl.style.boxShadow  = `0 0 ${14+bulb.brightness/3}px ${bulb.color}66, 0 0 64px ${bulb.color}1A`;
     if (bulb.brightness < 35) orbEl.classList.add('is-dim');

@@ -1,11 +1,12 @@
 /* ============================================================
    ILUMIX — Página de Dados Históricos
-   Exibe o histórico de luminosidade por lâmpada em Gráfico.
+   Exibe histórico de atributos por dispositivo em gráfico.
 ============================================================ */
 const HistoryPage = (() => {
   let selectedLampId = '';
+  let selectedAttribute = '';
   let lastN = 20;
-  let historyChartInstance = null; // Variável para controlar a instância do gráfico
+  let historyChartInstance = null;
 
   async function render() {
     const el = document.getElementById('page-history');
@@ -13,7 +14,7 @@ const HistoryPage = (() => {
 
     const lampOptions = Data.bulbs.map(b => {
       const id = b._apiId || b.id || '';
-      return `<option value="${id}">${escapeHtml(b.name)} (${escapeHtml(id)})</option>`;
+      return `<option value="${String(id)}">${escapeHtml(b.name)} (${escapeHtml(id)})</option>`;
     }).join('');
 
     el.innerHTML = `
@@ -24,18 +25,24 @@ const HistoryPage = (() => {
         </div>
 
         <div class="card" style="margin-bottom:var(--sp-4)">
-          <div style="display:grid;grid-template-columns:1fr 200px 140px;gap:var(--sp-3);align-items:end;flex-wrap:wrap">
+          <div style="display:grid;grid-template-columns:1fr 1fr 160px 140px;gap:var(--sp-3);align-items:end;flex-wrap:wrap">
             <label class="input-group">
-              <span>Selecionar lâmpada</span>
+              <span>Selecionar dispositivo</span>
               <select id="history-lamp-select" class="input input--full">
-                <option value="">Selecione uma lâmpada</option>
+                <option value="">Selecione um dispositivo</option>
                 ${lampOptions}
               </select>
             </label>
             <label class="input-group">
-              <span>Registrar</span>
+              <span>Atributo</span>
+              <select id="history-attribute-select" class="input input--full" disabled>
+                <option value="">Selecione um dispositivo primeiro</option>
+              </select>
+            </label>
+            <label class="input-group">
+              <span>Registros</span>
               <select id="history-lastn-select" class="input input--full">
-                ${[10,20,50,100].map(v => `<option value="${v}" ${v===lastN?'selected':''}>Últimos ${v}</option>`).join('')}
+                ${[10, 20, 50, 100].map(v => `<option value="${v}" ${v === lastN ? 'selected' : ''}>Últimos ${v}</option>`).join('')}
               </select>
             </label>
             <button class="btn btn--primary" id="history-refresh-btn">Buscar histórico</button>
@@ -44,7 +51,7 @@ const HistoryPage = (() => {
 
         <div id="history-result">
           <div class="card" style="padding:var(--sp-4);color:var(--text-lo)">
-            Escolha uma lâmpada e clique em "Buscar histórico" para ver os dados.
+            Escolha um dispositivo e um atributo, depois clique em "Buscar histórico".
           </div>
         </div>
       </div>`;
@@ -54,11 +61,17 @@ const HistoryPage = (() => {
 
   function _bindEvents() {
     const lampSelect = document.getElementById('history-lamp-select');
+    const attrSelect = document.getElementById('history-attribute-select');
     const lastNSelect = document.getElementById('history-lastn-select');
     const refreshBtn = document.getElementById('history-refresh-btn');
 
-    lampSelect?.addEventListener('change', e => {
+    lampSelect?.addEventListener('change', async e => {
       selectedLampId = e.target.value;
+      selectedAttribute = '';
+      await _loadAttributesForDevice(selectedLampId);
+    });
+    attrSelect?.addEventListener('change', e => {
+      selectedAttribute = e.target.value;
     });
     lastNSelect?.addEventListener('change', e => {
       lastN = Number(e.target.value) || 20;
@@ -66,13 +79,81 @@ const HistoryPage = (() => {
     refreshBtn?.addEventListener('click', loadHistory);
   }
 
+  function _findBulb(lampId) {
+    return Data.bulbs.find(b => String(b._apiId || b.id) === String(lampId));
+  }
+
+  async function _loadAttributesForDevice(lampId) {
+    const attrSelect = document.getElementById('history-attribute-select');
+    if (!attrSelect) return;
+
+    if (!lampId) {
+      attrSelect.disabled = true;
+      attrSelect.innerHTML = '<option value="">Selecione um dispositivo primeiro</option>';
+      return;
+    }
+
+    const bulb = _findBulb(lampId);
+    const deviceTypeId = bulb?.deviceTypeId || bulb?.idDevice || 1;
+
+    attrSelect.disabled = true;
+    attrSelect.innerHTML = '<option value="">Carregando atributos...</option>';
+
+    try {
+      const raw = await Api.deviceTypes.getAttributes(deviceTypeId);
+      const list = Array.isArray(raw) ? raw : [];
+      const filtered = list.filter(a => {
+        const name = (a.name || a.Name || '').trim().toLowerCase();
+        return name && name !== 'state';
+      });
+
+      if (!filtered.length) {
+        attrSelect.innerHTML = '<option value="">Nenhum atributo disponível</option>';
+        selectedAttribute = '';
+        return;
+      }
+
+      attrSelect.innerHTML = filtered.map(a => {
+        const name = a.name || a.Name;
+        return `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+      }).join('');
+
+      selectedAttribute = filtered[0].name || filtered[0].Name || '';
+      attrSelect.disabled = false;
+    } catch (error) {
+      attrSelect.innerHTML = `<option value="">Erro ao carregar atributos</option>`;
+      selectedAttribute = '';
+      console.error('[HistoryPage] atributos:', error.message);
+    }
+  }
+
   async function loadHistory() {
     const resultEl = document.getElementById('history-result');
     if (!resultEl) return;
+
     if (!selectedLampId) {
       resultEl.innerHTML = `
         <div class="card" style="padding:var(--sp-4);color:var(--text-lo)">
-          Selecione uma lâmpada antes de buscar o histórico.
+          Selecione um dispositivo antes de buscar o histórico.
+        </div>`;
+      return;
+    }
+
+    const attrSelect = document.getElementById('history-attribute-select');
+    selectedAttribute = attrSelect?.value || selectedAttribute;
+
+    if (!selectedAttribute) {
+      resultEl.innerHTML = `
+        <div class="card" style="padding:var(--sp-4);color:var(--text-lo)">
+          Selecione um atributo antes de buscar o histórico.
+        </div>`;
+      return;
+    }
+
+    if (typeof window.Chart !== 'function') {
+      resultEl.innerHTML = `
+        <div class="card" style="padding:var(--sp-4);color:var(--text-lo)">
+          O gráfico ainda não carregou (Chart.js). Aguarde 1–2 segundos e tente novamente.
         </div>`;
       return;
     }
@@ -83,7 +164,7 @@ const HistoryPage = (() => {
       </div>`;
 
     try {
-      const data = await Api.lamps.history(selectedLampId, lastN);
+      const data = await Api.devices.history(selectedLampId, lastN, selectedAttribute);
       let values = [];
       if (Array.isArray(data?.values)) {
         values = data.values;
@@ -98,30 +179,30 @@ const HistoryPage = (() => {
       if (!values.length) {
         resultEl.innerHTML = `
           <div class="card" style="padding:var(--sp-4);color:var(--text-lo)">
-            Nenhum dado histórico encontrado para esta lâmpada.
+            Nenhum dado histórico encontrado para o atributo "${escapeHtml(selectedAttribute)}".
           </div>`;
         return;
       }
 
-      // Arrays para alimentar o gráfico
       const labels = [];
       const chartData = [];
+      const attrLabel = selectedAttribute;
 
       values.forEach(entry => {
         const time = entry.recvTime || entry.time || entry.timestamp || '';
-        const value = entry.attrValue ?? entry.value ?? entry.luminosity ?? '';
-        
-        // Formata a data para exibir no eixo X de forma mais limpa
-        const formattedTime = time ? new Date(time).toLocaleString('pt-BR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
-        
+        const value = entry.attrValue ?? entry.value ?? entry[attrLabel] ?? '';
+        const formattedTime = time
+          ? new Date(time).toLocaleString('pt-BR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : '-';
+
         labels.push(formattedTime);
-        chartData.push(Number(value)); // Garante que o valor seja numérico
+        chartData.push(Number(value));
       });
 
       resultEl.innerHTML = `
         <div class="card" style="padding:var(--sp-4)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-4)">
-            <div style="font-size:13px;font-weight:600">Luminosidade histórica</div>
+            <div style="font-size:13px;font-weight:600">Histórico: ${escapeHtml(attrLabel)}</div>
             <div style="font-size:12px;color:var(--text-lo)">${values.length} registro(s)</div>
           </div>
           <div style="position: relative; height: 350px; width: 100%;">
@@ -129,10 +210,8 @@ const HistoryPage = (() => {
           </div>
         </div>`;
 
-      // Inicializa o Chart.js
       const ctx = document.getElementById('historyChart').getContext('2d');
-      
-      // Se já existir um gráfico renderizado antes, destrua-o para não bugar o novo
+
       if (historyChartInstance) {
         historyChartInstance.destroy();
       }
@@ -140,51 +219,43 @@ const HistoryPage = (() => {
       historyChartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: labels,
+          labels,
           datasets: [{
-            label: 'Luminosidade',
+            label: attrLabel,
             data: chartData,
-            borderColor: '#4f46e5', // Cor do tema (Indigo)
-            backgroundColor: 'rgba(79, 70, 229, 0.1)', // Preenchimento com opacidade
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79, 70, 229, 0.1)',
             borderWidth: 2,
             pointRadius: 3,
             pointHoverRadius: 5,
             fill: true,
-            tension: 0.3 // Deixa a linha com curva suave
-          }]
+            tension: 0.3,
+          }],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: {
-              display: false // Oculta a legenda do topo, pois já sabemos que é luminosidade
-            },
+            legend: { display: false },
             tooltip: {
               callbacks: {
-                label: function(context) {
-                  return `Luminosidade: ${context.parsed.y}`;
-                }
-              }
-            }
+                label(context) {
+                  return `${attrLabel}: ${context.parsed.y}`;
+                },
+              },
+            },
           },
           scales: {
             y: {
               beginAtZero: true,
-              suggestedMax: 100, // Sugere o topo como 100 (se for porcentagem)
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-              }
+              grid: { color: 'rgba(0, 0, 0, 0.05)' },
             },
             x: {
-              grid: {
-                display: false
-              }
-            }
-          }
-        }
+              grid: { display: false },
+            },
+          },
+        },
       });
-
     } catch (error) {
       resultEl.innerHTML = `
         <div class="card" style="padding:var(--sp-4);color:var(--text-lo)">
@@ -194,7 +265,7 @@ const HistoryPage = (() => {
   }
 
   function escapeHtml(value) {
-    return value
+    return String(value ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')

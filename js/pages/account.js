@@ -92,7 +92,7 @@ const AccountPage = (() => {
           <div class="sec-hdr__title" style="color:#ff6b6b">Zona de Perigo</div>
         </div>
         <p style="font-size:12px;color:var(--text-mid);margin-bottom:var(--sp-3)">
-          Ao excluir sua conta, todas as lâmpadas, cômodos e cenas serão removidos permanentemente.
+          Ao excluir sua conta, todas as dispositivos, cômodos e cenas serão removidos permanentemente.
         </p>
         <div id="acc-del-err" style="color:#ff6b6b;font-size:12px;margin-bottom:var(--sp-2);display:none"></div>
         <button class="btn btn--full" id="btn-del-account"
@@ -280,7 +280,7 @@ const AccountPage = (() => {
 
       const confirmed = confirm(
         '⚠️ Tem certeza? Esta ação é irreversível.\n\n' +
-        'Todas as suas lâmpadas, cômodos e cenas serão excluídos permanentemente.'
+        'Todas as suas dispositivos, cômodos e cenas serão excluídos permanentemente.'
       );
       if (!confirmed) return;
 
